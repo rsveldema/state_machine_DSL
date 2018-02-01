@@ -1,0 +1,12 @@
+*.dot
+__pycache__
+*.o
+*.d
+dslLexer*
+dslListener*
+dslParser*
+test_blinky
+test_power_manager
+test_boiler
+*.tokens
+generated_*
