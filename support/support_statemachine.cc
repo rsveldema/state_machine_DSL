@@ -1,10 +1,5 @@
 #include "support_statemachine.h"
 
-unsigned get_unique_id()
-{
-  static unsigned id;
-  return id++;
-}
 
 units::micros currentTimeMicros()
 {
@@ -23,16 +18,14 @@ units::micros currentTimeMicros()
   return ret - baseline;
 }
 
-std::string time2str(const units::micros &micros)
+void time2str(const units::micros &micros,
+	      char *buf,
+	      size_t buf_size)
 {
-  static char buf[64];
-
   uint64_t secs   = micros.to_secs();
   uint64_t millis = micros.to_millis() % 1000;
 
-  sprintf(buf, "%lld.%lld sec", secs, millis);
-
-  return buf;
+  snprintf(buf, buf_size, "%lld.%lld sec", (long long) secs, (long long) millis);
 }
 
 

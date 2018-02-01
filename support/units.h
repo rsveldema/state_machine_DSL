@@ -7,6 +7,7 @@ namespace units
   {
   private:
     uint64_t value;
+    
   public:
     micros(uint64_t _t)
       : value(_t)
@@ -60,7 +61,9 @@ namespace units
 }
 
 units::micros currentTimeMicros();
-std::string time2str(const units::micros &micros);
+void time2str(const units::micros &micros,
+	      char *buffer,
+	      size_t buffer_size);
 
 namespace ZEP
 {

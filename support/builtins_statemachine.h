@@ -81,8 +81,6 @@ void event_loop(const units::micros &us,
 }
 
 
-unsigned get_unique_id();
-
 #include "tracing.h"
 
 #endif
