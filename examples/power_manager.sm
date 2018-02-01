@@ -1,0 +1,113 @@
+
+machine PowerManager {
+
+  event b1_on  "button 1 pressed";
+  event b1_off "button 1 released";
+  event compute "compute task";
+  event testLowSpeed "test need low CPU speed";
+  event testSuspendToFLASH "test need suspend to flash";
+ 
+  initial state bootup {
+    entry {
+      if (should_restore_from_FLASH()) {
+	transition restoring_from_FLASH;
+      } else {
+	transition high_speed;
+      }
+    }
+  }
+
+  state low_speed {
+    entry {
+      // set CPU in low-speed
+    }
+    
+    event b1_on {
+      transition suspending_to_RAM;
+    }
+
+    event compute {
+      transition high_speed;
+    }
+  }
+
+  state high_speed {
+    entry {
+      emit compute;	
+      after secs(1) emit testLowSpeed;
+    }
+
+    event testLowSpeed {
+      transition low_speed;
+    }
+    
+    event compute {
+      // do stuff
+    }
+  }
+
+  // RAM
+
+  state suspending_to_RAM {
+    entry {
+      // shutdown peripherals.
+      transition suspended_to_RAM;
+    }
+  }
+
+  state suspended_to_RAM {
+      int FLASH_test_suspend_counter;
+
+ 	entry {
+	  FLASH_test_suspend_counter = 0;
+	  after secs(1) emit testSuspendToFLASH;
+	}
+	
+	event testSuspendToFLASH {
+	  if (need_wakeup()) {
+	    transition restoring_from_RAM;
+	  } else {
+	    FLASH_test_suspend_counter = FLASH_test_suspend_counter + 1;
+	    if (FLASH_test_suspend_counter == 10) {
+	      transition suspending_to_FLASH;
+	    } else {
+	      after secs(1) emit testSuspendToFLASH;
+	    }
+	  }
+	}
+  }
+
+  state restoring_from_RAM {
+    entry {
+      transition high_speed;
+    }
+  }
+
+  // FLASH
+
+  state suspending_to_FLASH {
+    entry {
+      // do write ops here.
+      transition suspended_to_FLASH;
+    }
+  }
+
+  state suspended_to_FLASH {
+    entry {
+      // shutdown CPU
+    }
+  }
+
+  state restoring_from_FLASH {
+    entry {
+      // do reverse of suspending_to_FLASH
+      transition high_speed;
+    }
+  }
+}
+
+
+testsuite buttonPresserTest {
+  test simple {
+  }
+}

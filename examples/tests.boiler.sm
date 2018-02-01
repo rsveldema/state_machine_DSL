@@ -1,0 +1,31 @@
+
+
+testsuite buttonPresserTest {
+ test simpel  {
+    transition bootup;
+    emit b1_on;
+    emit b1_off;
+  }
+  
+  test bad {
+    emit b2_on; // no handler for this, ERROR!
+  }
+}
+
+    
+testsuite buttonBoiling {
+  test simple {
+    transition bootup;
+    wait millis(500); // wait for boot to complete
+
+    emit b1_on;
+    wait secs(1); // wait for event to be processed
+    
+    emit b2_on;
+    wait secs(6); // wait for boiling water
+    
+    assert self->trace.contains("ENTER STATE: finish_boiling");
+    self->trace.dump();
+  }
+}
+

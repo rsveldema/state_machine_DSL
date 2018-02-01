@@ -1,0 +1,123 @@
+grammar dsl;
+
+startRule: directive* EOF;
+
+directive: machineRule | testsuiteRule | cppRule;
+
+cppRule: '#' NUMBER STRING NUMBER?;
+
+testsuiteRule: 'testsuite' ID '{' testRule* '}';
+
+testRule: 'test' ID '{' statement* '}';
+
+
+machineRule: 'machine' ID '{' codeRule*  '}';
+codeRule: stateRule | eventRule | declRule;
+
+
+declRule: ID ID ';';
+
+eventRule:  'event' ID STRING ';' ;
+
+state_modifier: 'initial';
+stateRule:   state_modifier* 'state' ID '{'
+	     (eventHandler | entryBlock | exitBlock | declRule)*
+	    '}';
+
+
+entryBlock:    'entry'    block;
+exitBlock:     'exit'     block;
+eventHandler:  'event' ID block;
+
+statement: if_stmt
+    | while_stmt
+    | expr_stmt ';'
+    | transitionStatement
+    | block
+    | emit_stmt
+    | after_stmt
+    | assert_stmt
+    | wait_stmt	
+    ;
+
+wait_stmt: 'wait' time_expr ';';
+
+assert_stmt: 'assert' expr ';';
+
+emit_stmt: 'emit' ID ';';
+
+after_stmt: 'after' expr 'emit' ID ';';
+
+while_stmt: 'while' '(' expr ')' statement;
+
+if_stmt:
+	'if' '(' expr ')' statement ('else' statement)?;
+
+transitionStatement: 'transition' ID ';';
+
+block: '{' statement* '}';
+
+expr_stmt: lhs
+        ( op='=' expr
+	| op='+=' expr
+	| op='-=' expr
+	| op='*=' expr
+	| op='/=' expr
+	| op='%=' expr
+	)?
+    ;
+
+arg_list: '(' (expr (',' expr)*)?  ')';
+
+lhs: lhsPrefix? ID selector* arg_list? ;
+
+lhsPrefix: '::'
+;
+
+selector:  op='.'  ID
+|          op='->' ID
+|          op='::' ID
+;
+
+expr: paren_expr | bin_expr | time_expr | NUMBER | STRING;
+
+time_expr: unit='secs' '(' expr ')'
+|          unit='millis' '(' expr ')'
+|          unit='micros' '(' expr ')'
+|          unit='hours' '(' expr ')'
+;
+
+bin_expr: lhs
+        ( op='+' expr
+        | op='-' expr
+        | op='*' expr
+        | op='/' expr
+        | op='>' expr
+        | op='<' expr
+        | op='>=' expr
+        | op='<=' expr
+        | op='&&' expr
+        | op='||' expr
+        | op='!=' expr
+        | op='==' expr
+        )?
+    ;
+
+paren_expr: '(' expr ')';
+
+STRING: '"' STRCHAR*? '"';
+fragment STRCHAR:[ ,?!a-zA-Z0-9_/.\\<>\-:;];
+
+ID: [a-zA-Z][_a-zA-Z0-9]*;
+
+NUMBER: [0-9]+ ('.' [0-9]+)?;
+
+WS: [ \r\n\t]+ -> skip
+   ;
+
+
+COMMENT: '/*' .*? '*/' -> skip
+    ;
+
+LINE_COMMENT: '//' ~[\r\n]* -> skip
+    ;
