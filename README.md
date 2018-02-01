@@ -41,7 +41,7 @@ INSTALLATION:
 	- install antlr 4
 	- install astyle
 	  	  // used to make the generated code pretty,
-		  // disable if you want
+		  // disable if you want.
 	- pip3 install antlr4-python3-runtime
 	- pip3 install pystache
 	- gcc g++
