@@ -1,7 +1,7 @@
 
 This project contains a light-weight state machine DSL.
 A code generator generates C++ code from a state machine's description.
-The generated C code is compact, and for use on embedded devices (STM32, PIC,
+The generated C code is compact, and for use on embedded devices (STM32, PIC, Arduino, Raspberry PI,
 Kinetis, LPC, Nordic, etc. should all work using std. C++ compilers).
 
 ## Example ##
