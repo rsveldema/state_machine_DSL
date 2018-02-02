@@ -4,7 +4,7 @@ import pystache
 from dslLexer import dslLexer
 from dslParser import dslParser
 from dslListener import dslListener
-from analyzer import semantic_analysis
+from analyzer import semantic_analysis,stateName2String,stateName2PrettyString
 
 currentMachine = None
 event_list = []
@@ -24,7 +24,8 @@ def generate_paren(f, e):
     write(f, ")");
 
 def generate_transition(f, t):
-    write(f, "self->transition(self->state_union." + str(t.ID()) + ");");
+    name = stateName2String(t.stateName())
+    write(f, "self->transition(self->state_union." + name + ");");
 
 def generate_bin(f, e):
     lhs = e.lhs()
@@ -181,7 +182,7 @@ def generate_eventHandler(f, eventHandlerList):
         
 
 def generate_entryBlock(f, state, entryBlkList):
-    state_name = str(state.ID())    
+    state_name = stateName2String(state.stateName())
     write(f, "void entry("+str(currentMachine.ID())+" *self) {");
     write(f, "memset(this, 0, sizeof(*this));");
     write(f, "self->state = STATES::STATE_" + state_name + ";");
@@ -202,7 +203,7 @@ def generate_declsBlock(f, state, decls):
 
 def generate_machine_state(f, state, state_list):
     if state != None:
-        name = str(state.ID());
+        name = stateName2String(state.stateName())
         write(f, "class TYPE_" + name + " {");
         write(f, "public:");
         generate_eventHandler(f, state.eventHandler());
@@ -216,7 +217,7 @@ def generate_machine_state(f, state, state_list):
         write(f, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \"state\"); break; }");
         write(f, "case STATES::STATE_NONE: break;");
         for state in state_list:
-            state_name = str(state.ID())
+            state_name = stateName2String(state.stateName())
             write(f, "case STATES::STATE_" + state_name + ": state_union."+state_name+".exit(this); break;");
         write(f, "}");
         
@@ -227,7 +228,8 @@ def generate_machine_state(f, state, state_list):
 def generate_machine_state_enum(f, state, state_list):
     if state != None:
         state_list.append(state)
-        write(f, "STATE_" + str(state.ID()) + ",");
+        name = stateName2String(state.stateName())
+        write(f, "STATE_" + name + ",");
 
 def generate_machine_event_enum(f, event):
     global event_list;
@@ -254,7 +256,7 @@ def generate_machine_event_handler(f, event, state_list):
         write(f, "switch (state) {");
         write(f, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \""+eventname+"\"); break; }");
         for state in state_list:
-            statename = str(state.ID())
+            statename = stateName2String(state.stateName())
             write(f, "case STATES::STATE_" + statename + ": {");
             if hasEventHandler(state, eventname):
                 write(f, "state_union." + statename + ".handler_" + eventname + "(this);");
@@ -285,7 +287,7 @@ def generate_states(f, codeRule, state_list):
 
     f.write("union {\n");
     for s in state_list:
-        name = str(s.ID())
+        name = stateName2String(s.stateName())
         f.write("TYPE_" + name + " " + name + ";\n");
     f.write("} state_union;\n\n");
 
@@ -370,6 +372,7 @@ class CGeneratorListener(dslListener):
         name = str(ctxt.ID())
 
         state_list = []
+        ctxt.state_list = state_list;
           
         write(self.enums, "enum class STATES {");
         write(self.enums, "STATE_NONE,");
@@ -408,26 +411,62 @@ class DottyGeneratorListener(dslListener):
     def __init__(self, fp):
         self.fp = fp
         self.currentState = None
+        self.state_list = []
         
     def enterStateRule(self, ctxt):
         self.currentState = ctxt;
-        self.fp.write("" + str(ctxt.ID()) + ";\n");
+        ctxt.all_transitions = []
+        self.state_list.append(ctxt)
         
     def exitStateRule(self, ctxt):
         self.currentState = None;
 
     def enterTransitionStatement(self, ctxt):
         if self.currentState != None:
-            currentname = str(self.currentState.ID())
-            print("trans -> " + str(ctxt.ID()))
-            self.fp.write(currentname + " -> " + str(ctxt.ID()) + ";\n");
+            self.currentState.all_transitions.append(ctxt)         
 
+def add_to_container(containers, p):
+    names = p.stateName().ID()
+    if len(names) == 1:
+        c = ""
+    else:
+        c = str(names[0])
+        
+    if not c in containers:
+        containers[c] = []
+    containers[c].append(p)
+    
+            
 def generateDotFile(tree, baseName):
     fp = open(baseName + ".dot", "w")
-    fp.write("digraph file {\n");
-    printer = DottyGeneratorListener(fp)
+    fp.write("digraph file {\n");    
+    fp.write("compound=true;\n");
+    
+    listener = DottyGeneratorListener(fp)
     walker = ParseTreeWalker()
-    walker.walk(printer, tree)
+    walker.walk(listener, tree)
+
+    containers={}
+    for p in listener.state_list:
+        add_to_container(containers, p)
+
+    for c in containers:
+        if c != "":        
+            fp.write("subgraph " + c + " {\n")
+            
+        plist = containers[c]
+        for p in plist:
+            name = stateName2String(p.stateName())
+            pretty = stateName2PrettyString(p.stateName())
+            fp.write(name + " [label=\""+pretty+"\"];\n");
+
+            for t in p.all_transitions:  
+                toName = stateName2String(t.stateName())
+                fp.write(name + " -> " + toName + ";\n");
+
+        if c != "":        
+            fp.write("}\n")
+            
     fp.write("}");
     fp.close();
 

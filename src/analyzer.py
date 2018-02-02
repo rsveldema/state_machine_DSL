@@ -29,8 +29,23 @@ def transition_visit(node, seen):
 def check_transition_stmts(cfg):
     seen = {}
     transition_visit(cfg.root, seen)
-    
 
+
+def stateName2StrInternal(stateName, selector):
+    ret = ""
+    sel = ""
+    for i in stateName.ID():
+        ret += sel + str(i)
+        sel = selector
+    return ret;
+    
+def stateName2PrettyString(stateName):
+    return stateName2StrInternal(stateName, "::")
+
+def stateName2String(stateName):
+    return stateName2StrInternal(stateName, "_")
+    
+    
 # Transition statements should:
 #     - entry and exit statements should
 #     - handler statements should contains transition statements only at the end of the method
@@ -39,7 +54,7 @@ class AnalyzerListener(dslListener):
         self.name = ""
 
     def enterStateRule(self, ctxt):
-        self.name = str(ctxt.ID())
+        self.name = stateName2String(ctxt.stateName());
     
     def enterEntryBlock(self, ctxt):
         cfg = CFG(ctxt.block(), self.name + "-entry");

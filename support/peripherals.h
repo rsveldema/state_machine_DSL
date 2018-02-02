@@ -22,7 +22,7 @@ class Boiler
     {
     }
   
-  void on()   { assert(! enabled); enabled = true; t = ZEP::Utilities::Timeout(units::secs(4)); }
+  void on()   { assert(! enabled); enabled = true;  t = ZEP::Utilities::Timeout(units::secs(4)); }
   void off()  { assert(enabled);   enabled = false; t = ZEP::Utilities::Timeout(0); }
   bool done() { return enabled && t.hasElapsed(); }
 };

@@ -20,10 +20,11 @@ declRule: ID ID ';';
 eventRule:  'event' ID STRING ';' ;
 
 state_modifier: 'initial';
-stateRule:   state_modifier* 'state' ID '{'
+stateRule:   state_modifier* 'state' stateName '{'
 	     (eventHandler | entryBlock | exitBlock | declRule)*
 	    '}';
 
+stateName: ID ('::' ID)*;
 
 entryBlock:    'entry'    block;
 exitBlock:     'exit'     block;
@@ -53,7 +54,7 @@ while_stmt: 'while' '(' expr ')' statement;
 if_stmt:
 	'if' '(' expr ')' statement ('else' statement)?;
 
-transitionStatement: 'transition' ID ';';
+transitionStatement: 'transition' stateName ';';
 
 block: '{' statement* '}';
 

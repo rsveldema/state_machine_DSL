@@ -1,6 +1,5 @@
 
 
-
 machine WaterBoiler {
 
   event b1_on  "button 1 pressed";
@@ -48,12 +47,27 @@ machine WaterBoiler {
       boiler.on();
       pump.on();
 
-      transition boiling;
+      transition brewing::warmup;
     }
   }
 
+  state brewing::warmup {
+    int warmup_steps;
+    entry {
+      warmup_steps = 0;
+      after secs(1) emit testFill;      
+    }
+
+    event testFill {
+      if (warmup_steps < 4) {
+	after secs(1) emit testFill;
+      } else {
+	transition brewing::boiling;
+      }
+    }
+  }
   
-  state boiling {
+  state brewing::boiling {
     int boil_steps;
     
     entry {
@@ -64,7 +78,7 @@ machine WaterBoiler {
     event testFill {
       if (boiler.done()) {
 	printf("boiler has finished\n");
-	transition finish_boiling;
+	transition brewing::finish_boiling;
       } else {
 	printf("boiler not done yet\n");
 	after secs(1) emit testFill;
@@ -72,7 +86,7 @@ machine WaterBoiler {
     }
   }
 
-  state finish_boiling {
+  state brewing::finish_boiling {
     entry {
       pump.off();
       transition on;
