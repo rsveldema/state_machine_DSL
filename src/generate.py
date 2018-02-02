@@ -439,8 +439,7 @@ def add_to_container(containers, p):
             
 def generateDotFile(tree, baseName):
     fp = open(baseName + ".dot", "w")
-    fp.write("digraph file {\n");    
-    fp.write("compound=true;\n");
+    fp.write("digraph file {\n");   
     
     listener = DottyGeneratorListener(fp)
     walker = ParseTreeWalker()
@@ -452,7 +451,9 @@ def generateDotFile(tree, baseName):
 
     for c in containers:
         if c != "":        
-            fp.write("subgraph " + c + " {\n")
+            fp.write("subgraph cluster_" + c + " {\n")
+            fp.write("\tlabel = \""+c+"\"\n");
+            fp.write("\tlabeljust=\"l\";\n")
             
         plist = containers[c]
         for p in plist:
