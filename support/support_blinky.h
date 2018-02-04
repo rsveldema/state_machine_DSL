@@ -3,7 +3,7 @@
 
 
 #include <assert.h>
-
+#include "HashValue.h"
 
 class Led
 {
@@ -16,8 +16,10 @@ class Led
     {
       id = -1;
     }
-  
 
+  HashValue getHash() const { return id | state << 12; }
+  bool operator < (const Led &e) const { return getHash() < e.getHash(); }
+  
   void init(int id) { this->id = id; }
   
   void on()

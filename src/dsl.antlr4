@@ -4,7 +4,7 @@ startRule: directive* EOF;
 
 directive: machineRule | testsuiteRule | cppRule;
 
-cppRule: '#' NUMBER STRING NUMBER?;
+cppRule: '#' NUMBER STRING NUMBER*;
 
 testsuiteRule: 'testsuite' ID '{' testRule* '}';
 
@@ -17,7 +17,13 @@ codeRule: stateRule | eventRule | declRule;
 
 declRule: ID ID ';';
 
-eventRule:  'event' ID STRING ';' ;
+eventRule: eventModifier* 'event' ID STRING ';' ;
+
+eventModifier: op='internal'
+|              op='external'
+;
+
+
 
 state_modifier: 'initial';
 stateRule:   state_modifier* 'state' stateName '{'

@@ -3,12 +3,20 @@
 
 
 #include <assert.h>
+#include "HashValue.h"
+
+
 class Stopwatch
 {
- public:
-  void init() {}
-  void start() {}
-  void stop() {}
+  int state = 1;
+
+ public: 
+  void init()  { state = 2; }
+  void start() { state = 3; }
+  void stop()  { state = 4; }
+
+  HashValue getHash() const { return state; }
+  bool operator < (const Stopwatch &e) const { return getHash() < e.getHash(); }
 };
 
 class Boiler
@@ -21,6 +29,9 @@ class Boiler
  Boiler() : t(units::secs(0))
     {
     }
+
+  HashValue getHash() const { return enabled; }
+  bool operator < (const Boiler &e) const { return getHash() < e.getHash(); }
   
   void on()   { assert(! enabled); enabled = true;  t = ZEP::Utilities::Timeout(units::secs(4)); }
   void off()  { assert(enabled);   enabled = false; t = ZEP::Utilities::Timeout(0); }
@@ -29,9 +40,14 @@ class Boiler
 
 class Pump
 {
+  int state = 1;
+  
  public:
-  void on() {}
-  void off() {}
+  void on()  { state = 2; }
+  void off() { state = 3; }
+
+  HashValue getHash() const { return state; }
+  bool operator < (const Pump &e) const { return getHash() < e.getHash(); }
 };
 
 

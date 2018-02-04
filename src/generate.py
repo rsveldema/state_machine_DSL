@@ -4,7 +4,7 @@ import pystache
 from dslLexer import dslLexer
 from dslParser import dslParser
 from dslListener import dslListener
-from analyzer import semantic_analysis,stateName2String,stateName2PrettyString
+from analyzer import semantic_analysis,stateName2String,stateName2PrettyString,isExternal
 
 currentMachine = None
 event_list = []
@@ -199,7 +199,7 @@ def generate_exitBlock(f, state, exitBlkList):
 
 def generate_declsBlock(f, state, decls):
     for d in decls:
-        generate_machine_decl(f, d)
+        generate_machine_decl(f, d, None, None)
 
 def generate_machine_state(f, state, state_list):
     if state != None:
@@ -236,10 +236,14 @@ def generate_machine_event_enum(f, event):
     if event != None:
         event_list.append(event)
         write(f, "EVENT_" + str(event.ID()) + ",");
-       
-def generate_machine_event(f, event):
+
+        
+def generate_machine_event(f, event, events):
     if event != None:
-        write(f, "Event " + str(event.ID()) + ";");
+        name = str(event.ID())
+        write(f, "Event " + name + ";");
+        if isExternal(event):
+            write(events, "vec.push_back(" + name + ");")
 
 
 def hasEventHandler(state, eventname):
@@ -268,14 +272,20 @@ def generate_machine_event_handler(f, event, state_list):
 
         write(f, "}");
 
-def generate_machine_decl(f, decl):
+def generate_machine_decl(f, decl, hashmethod, compare):
     if decl != None:
         names = decl.ID()
         write(f, str(names[0]) + " " + str(names[1]) + ";")
 
-def generate_events(f, codeRule):
+        if compare != None:
+            write(compare, "if (" + str(names[1]) + " < other." + str(names[1])+  ") return true;\n");
+            
+        if hashmethod != None:
+            write(hashmethod, "hashValue.add(" + str(names[1]) + ".getHash());\n");
+
+def generate_events(f, codeRule, events):
     for r in codeRule:
-        generate_machine_event(f, r.eventRule())
+        generate_machine_event(f, r.eventRule(), events)
 
 def generate_event_handler(f, codeRule, state_list):
     for r in codeRule:
@@ -300,9 +310,9 @@ def generate_event_enum(f, codeRule):
         generate_machine_event_enum(f, r.eventRule())
 
         
-def generate_decls(f, codeRule):
+def generate_decls(f, codeRule, hashmethod, compare):
     for r in codeRule:
-        generate_machine_decl(f, r.declRule())
+        generate_machine_decl(f, r.declRule(), hashmethod, compare)
 
 def generate_event_ctor_call(h, eventRule, first):
     prefix = ": " if first else ", "
@@ -320,10 +330,13 @@ def generate_constructor(h, machineRule):
             first = False
 
 class CGeneratorListener(dslListener):
-    def __init__(self, h, test, enums):
+    def __init__(self, h, test, enums, hashmethod, events, compare):
         self.test = test
+        self.compare = compare
+        self.events = events
         self.h = h
         self.enums = enums
+        self.hashmethod = hashmethod;
 
     def enterTestsuiteRule(self, ctxt):
         global test_suite_list;
@@ -389,11 +402,11 @@ class CGeneratorListener(dslListener):
         generate_constructor(self.h, ctxt);
         write(self.h, "{}");
 
-        generate_events(self.h, ctxt.codeRule())
+        generate_events(self.h, ctxt.codeRule(), self.events)
         write(self.h, "");
         generate_event_handler(self.h, ctxt.codeRule(), state_list)
         write(self.h, "");
-        generate_decls(self.h, ctxt.codeRule())
+        generate_decls(self.h, ctxt.codeRule(), self.hashmethod, self.compare)
         write(self.h, "");
         generate_states(self.h, ctxt.codeRule(), state_list)
 
@@ -481,15 +494,17 @@ class StringStream:
 
 def generateC(tree, fileName, baseName):
     test = open("generated_test_"+baseName+".cc", "w")
-
     test.write("#include \"generated_state_machine_"+baseName+".hpp\"\n");
     test.write("// generated from " + fileName + "\n");
     
-    h = StringStream()
-    enums = StringStream()
-    
-    printer = CGeneratorListener(h, test, enums)
-    walker = ParseTreeWalker()
+    h          = StringStream()
+    hashmethod = StringStream()
+    enums      = StringStream()
+    events     = StringStream()
+    compare    = StringStream()
+
+    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare)
+    walker  = ParseTreeWalker()
     walker.walk(printer, tree)
 
     write(test, "void registerTests_"+baseName+"() {");
@@ -498,12 +513,16 @@ def generateC(tree, fileName, baseName):
     write(test, "}");
     test.close()
 
+
     with open(template_path + '/template.generated_code.h') as x: f = x.read()    
     names = {}
     names['base_name'] = baseName
     names['state_machine_name'] = str(currentMachine.ID())
     names['MAIN_CODE'] = h.code
     names['ENUM_CODE'] = enums.code
+    names['HASH_CODE'] = hashmethod.code
+    names['COMPARE_FIELDS'] = compare.code
+    names['EVENT_VEC'] = events.code
     rendered = pystache.Renderer().render(f, names)
     
     h = open("generated_state_machine_"+baseName+".hpp", "w")

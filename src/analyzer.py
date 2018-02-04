@@ -14,6 +14,25 @@ def error(stmt, msg):
     print(filename + ":" + str(stmt.start.line) + ": ERROR: " + msg)
     error_count += 1
 
+    
+def isExternal(event):
+    modifiers = event.eventModifier()
+    for m in modifiers:
+        name = m.op.text
+        if name == 'internal':
+            return False;
+    return True
+
+    
+def isInternal(event):
+    modifiers = event.eventModifier()
+    for m in modifiers:
+        name = m.op.text
+        if name == 'internal':
+            return True;
+    return False
+
+
 def transition_visit(node, seen):
     if node in seen:
         return
@@ -55,6 +74,10 @@ class AnalyzerListener(dslListener):
 
     def enterStateRule(self, ctxt):
         self.name = stateName2String(ctxt.stateName());
+
+    def enteremit_stmt(self, ctxt):
+        # can only trigger internal events
+        name = ctxt.ID()
     
     def enterEntryBlock(self, ctxt):
         cfg = CFG(ctxt.block(), self.name + "-entry");

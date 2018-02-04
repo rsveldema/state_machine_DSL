@@ -1,14 +1,10 @@
 
-
 machine WaterBoiler {
 
-  event b1_on  "button 1 pressed";
-  event b1_off "button 1 released";
-  
-  event b2_on  "button 2 pressed";
-  event b2_off "button 2 released";
+  event button_on  "button 1 pressed";
+  event button_start  "button 2 pressed";
 
-  event testFill "test if glass full";
+  internal event tick "test if glass full";
 
   Stopwatch on_time;
   Boiler boiler;
@@ -25,8 +21,13 @@ machine WaterBoiler {
     entry {
       on_time.stop();
     }
-    
-    event b1_on
+
+    event button_start
+    {
+        // ignore event
+    }
+
+    event button_on
     {
       transition on;
     }
@@ -38,12 +39,12 @@ machine WaterBoiler {
       on_time.start();
     }
     
-    event b1_off
+    event button_on
     {      
       transition suspend;
     }
 
-    event b2_on {
+    event button_start {
       boiler.on();
       pump.on();
 
@@ -55,12 +56,23 @@ machine WaterBoiler {
     int warmup_steps;
     entry {
       warmup_steps = 0;
-      after secs(1) emit testFill;      
+      after secs(1) emit tick;      
     }
 
-    event testFill {
+    event button_start
+    {
+      // ignore event
+    }
+
+    event button_on
+    {
+        // ignore event
+    }
+
+
+    event tick {
       if (warmup_steps < 4) {
-	after secs(1) emit testFill;
+	after secs(1) emit tick;
       } else {
 	transition brewing::boiling;
       }
@@ -72,16 +84,16 @@ machine WaterBoiler {
     
     entry {
        boil_steps = 0;
-       after secs(1) emit testFill;
+       after secs(1) emit tick;
     }
 
-    event testFill {
+    event tick {
       if (boiler.done()) {
 	printf("boiler has finished\n");
 	transition brewing::finish_boiling;
       } else {
 	printf("boiler not done yet\n");
-	after secs(1) emit testFill;
+	after secs(1) emit tick;
       }
     }
   }

@@ -12,38 +12,15 @@
 
 #include "units.h"
 
-#if USE_CUNIT
-
-#include <CUnit/CUnit.h>
-
-#define CREATE_TEST_SUITE(init, cleanup, name) ({		 \
-      CU_pSuite suite = CU_add_suite(name, init, cleanup);	 \
-      if (suite == 0) {						 \
-	fprintf(stderr, "failed to add test-suite!\n");		 \
-	abort();						 \
-      }								 \
-      suite;							 \
-    })
-
-
-#define REGISTER_TEST_IN_SUITE(suite, func, name) {			\
-    CU_pTest err = CU_add_test(suite, name, func);			\
-    if (err == 0)  {							\
-      fprintf(stderr, "failed to register test in test-suite!\n");	\
-      abort();								\
-    }									\
-  }
-
-
-#define REGISTER_TEST_SUITE(suite) {		\
-}
-
-#define ASSERT(X)  CU_ASSERT(X)
-
-#else
-#define "UNHANDLED TEST SUITE"
+#if USE_MODELCHECK
 #include <assert.h>
-#define ASSERT(X) assert(x)
+#define ASSERT(X) assert(X)
+#elif USE_CUNIT
+#include "support_cunit.h"
+#else
+#warning "UNHANDLED TEST SUITE"
+#include <assert.h>
+#define ASSERT(X) assert(X)
 #endif
 
 #define WAIT(SEC)         event_loop(SEC, self)
@@ -55,8 +32,9 @@
   }
 
 #define STATE_MISSING_EVENT_HANDLER(state, event) {			\
-    fprintf(stderr, "ERROR: missing event hander '%s' in state '%s'\n", event, state); \
-    ASSERT(0);							\
+    fprintf(stderr, "ERROR: missing event hander '%s' in state '%s'\n", \
+	    event, state);						\
+    ASSERT(0);								\
   }
 
 
