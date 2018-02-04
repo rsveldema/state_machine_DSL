@@ -1,13 +1,6 @@
 #include <map>
 #include <stack>
 
-// in the model checker we do not want the actual time used
-units::micros currentTimeMicros()
-{
-  static uint64_t t;
-  return t++;
-}
-
 template<class T>
 class HashEntry
 {

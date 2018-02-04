@@ -5,8 +5,8 @@ LDFLAGS=$(HOME)/CUnitHome/lib/libcunit.a
 all: test_boiler test_power_manager test_blinky model_check_boiler
 
 model_check_boiler: generated_test_boiler.cc
-	g++ $(CXXFLAGS) model_check_boiler.cc -DUSE_MODELCHECK
-	g++ model_check_boiler.o -o model_check_boiler
+	g++ $(CXXFLAGS) model_check_boiler.cc ../model_checker/support_model_checker.cc -DUSE_MODELCHECK
+	g++ model_check_boiler.o support_model_checker.o -o model_check_boiler
 
 generated_test_power_manager.cc: power_manager.sm
 	@echo "------------ generate code"

@@ -112,3 +112,17 @@ and be safe to copy with a copy constructor.
 Antlr [http://www.antlr.org] then generates a parser from the DSL's grammar.
 Hence, first install python and antlr4 using your platform's installers.
 
+## Code organization ##
+
+   * src/dsl.antlr     -- antlr grammar of DSL, generates dslParser.py, etc
+   * src/generate.py   -- generates the C++ code taking templates/* as input and                       -- replacing {{..}} with text fragments created here
+   * src/stringify.py  -- pretty prints the antlr AST
+   * src/analyzer.py   -- tests that a transition statement is the very last in an action block
+
+   * templates/main.template.cc -- the main() function for CUnit unit tests
+   * template.generated_code.h  -- the frame for the generated state machine header file
+
+   * examples/*.sm  -- example state machines. We use cpp to allow #include statements to split larger state machines into several files
+
+
+   * model_checker
