@@ -91,6 +91,8 @@ int main(int argc, char **argv)
 }
 ```
 
+For the model checker to work, the mocked devices must have 'operator <' defined
+and be safe to copy with a copy constructor.
 
 ## Installation ##
 
