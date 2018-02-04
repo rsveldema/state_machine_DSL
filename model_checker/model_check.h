@@ -1,19 +1,12 @@
 #include <map>
 #include <stack>
 
+// in the model checker we do not want the actual time used
 units::micros currentTimeMicros()
 {
   static uint64_t t;
   return t++;
 }
-
-namespace ZEP
-{
-  namespace Utilities
-  {
-  }
-}
-
 
 template<class T>
 class HashEntry
@@ -56,6 +49,23 @@ private:
   std::map<HashEntry<T>, T *> map;
   std::stack<Todo<T>> todo_stack;
 
+  struct Statictics {
+    uint64_t creations = 0;
+    uint64_t duplicates = 0;
+
+    void dump()
+    {
+      fprintf(stderr, "------------------------------------\n");
+      fprintf(stderr, "------ MODEL CHECKING REPORT -------\n");
+      fprintf(stderr, "    CREATED machines:   %ld\n", (long)creations);
+      fprintf(stderr, "    DUPLICATE machines: %ld", (long)duplicates);
+
+      double effectiveness = 100 * ((double)duplicates / (double) creations);
+      fprintf(stderr, "        (hash effectiveness %4.0f %%)\n", effectiveness);
+      fprintf(stderr, "------------------------------------\n");
+    }
+  } stats;
+
 public:
   Modelchecker(T *init)
   {
@@ -70,16 +80,17 @@ private:
   }
   
   void process(const Todo<T> &todo)
-  {
+  {        
     T *p = todo.data;
     if (! already_seen(p))
-      {
+      {	
 	HashEntry<T> entry(p);
 	map[entry] = p;
 	
 	fprintf(stderr, "not already seen!\n");
 	for (auto event : p->getEventVector())
 	  {
+	    stats.creations++;
 	    T *clone = new T(*p);
 	    clone->emit(event);
 
@@ -89,6 +100,7 @@ private:
     else
       {
 	fprintf(stderr, "already seen!\n");
+	stats.duplicates++;
       }
   }
   
@@ -101,7 +113,9 @@ public:
 	todo_stack.pop();
 	
 	process(t);
-      }    
+      }
+
+    stats.dump();
   }
 };
 	

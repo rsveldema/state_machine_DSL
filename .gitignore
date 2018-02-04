@@ -11,3 +11,4 @@ test_boiler
 model_check_boiler
 *.tokens
 generated_*
+*~
