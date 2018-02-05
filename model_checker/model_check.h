@@ -9,9 +9,9 @@ private:
   HashValue hash;
 
 public:
- HashEntry(T *_data)
-   : data(_data),
-     hash(data->getHash())
+  HashEntry(T *_data)
+    : data(_data),
+      hash(data->getHash())
   {
     fprintf(stderr, "computed hash: %lx\n", (long) hash.get());
   }
@@ -31,7 +31,7 @@ template<class T>
 class Todo
 {
 public:
-  T *data;
+  T data;
 };
 
 
@@ -40,7 +40,7 @@ class Modelchecker
 {
 private:
   std::map<HashEntry<T>, T *> map;
-  std::stack<Todo<T>> todo_stack;
+  std::stack<Todo<T*>> todo_stack;
 
   struct Statictics {
     uint64_t creations = 0;
@@ -62,7 +62,7 @@ private:
 public:
   Modelchecker(T *init)
   {
-    todo_stack.push(Todo<T>{init});
+    todo_stack.push(Todo<T*>{init});
   }
 
 private:
@@ -71,30 +71,48 @@ private:
     HashEntry<T> entry(p);
     return map.find(entry) != map.end();
   }
-  
-  void process(const Todo<T> &todo)
+
+  void process(const Todo<T*> &todo)
   {        
     T *p = todo.data;
-    if (! already_seen(p))
-      {	
-	HashEntry<T> entry(p);
-	map[entry] = p;
-	
-	fprintf(stderr, "not already seen!\n");
-	for (auto event : p->getEventVector())
-	  {
-	    stats.creations++;
-	    T *clone = new T(*p);
-	    clone->emit(event);
 
-	    todo_stack.push(Todo<T>{clone});
+    bool done = false;
+    while (!done)
+      {
+	typename T::delayed_event_t found_de;
+	if (p->removeEarliestDeadlineEvent(found_de))
+	  {
+	    p->emit(found_de.second);
+	  }
+	else
+	  {
+	    // no pending events, can only inject new events
+	    done = true;
+	  }
+	
+	if (! already_seen(p))
+	  {	
+	    HashEntry<T> entry(p);
+	    map[entry] = p;
+	
+	    fprintf(stderr, "not already seen!\n");
+	    for (auto event : p->getEventVector())
+	      {
+		stats.creations++;
+		T *clone = new T(*p);
+		clone->emit(event);
+
+		todo_stack.push(Todo<T*>{clone});
+	      }
+	  }
+	else
+	  {
+	    fprintf(stderr, "already seen!\n");
+	    stats.duplicates++;
+	    break;
 	  }
       }
-    else
-      {
-	fprintf(stderr, "already seen!\n");
-	stats.duplicates++;
-      }
+    delete p;
   }
   
 public:
@@ -102,7 +120,7 @@ public:
   {
     while (! todo_stack.empty())
       {
-	Todo<T> t = todo_stack.top();
+	Todo<T*> t = todo_stack.top();
 	todo_stack.pop();
 	
 	process(t);

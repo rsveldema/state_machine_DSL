@@ -223,7 +223,41 @@ public:
     process_delayed_events();
     do_emit(event);
   }
+
   
+  bool removeEarliestDeadlineEvent(delayed_event_t &found_de)
+  {
+    ZEP::Utilities::Timeout earliest_time;
+    bool success = false;
+    for (size_t i = 0; i < delayed_events_stack.max_size(); i++)
+      {
+	if (delayed_events_stack.is_valid(i))
+	  {
+	    const delayed_event_t &de = delayed_events_stack.get(i);
+	    const ZEP::Utilities::Timeout t = de.first;
+	    
+	    if (t.hasElapsed())
+	      {
+		if (! success)
+		  {
+		    earliest_time = t;
+		    found_de = de;
+		  }
+		else
+		  {
+		    if (earliest_time > t)
+		      {
+			earliest_time = t;
+			found_de = de;
+		      }
+		  }
+		
+		success = true;
+	      }
+	  }
+      }
+    return success;
+  }  
 };
 
 void registerTests_{{base_name}} ();

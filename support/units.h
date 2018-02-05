@@ -29,6 +29,11 @@ namespace units
       return value > t.value;
     }
 
+    bool operator < (const micros &t) const
+    {
+      return value < t.value;
+    }
+
     const micros operator + (const micros &t) const
     {
       return micros(value + t.value);
@@ -99,6 +104,18 @@ namespace ZEP
       {
 	const units::micros &now = currentTimeMicros();
 	return now > deadline;
+      }
+      
+      units::micros get() const { return deadline; }
+      
+      bool operator < (const Timeout &t2) const
+      {
+	return get() < t2.get();
+      }
+
+      bool operator > (const Timeout &t2) const
+      {
+	return get() > t2.get();
       }
     };
   }
