@@ -14,6 +14,8 @@ namespace units
     {
     }
 
+    uint64_t get() const { return value; }
+
     uint64_t to_secs() const
     {
       return value / (1000UL * 1000UL);

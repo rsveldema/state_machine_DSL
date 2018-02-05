@@ -1,6 +1,8 @@
 #include <map>
 #include <stack>
 
+void warp_speed_clock(const ZEP::Utilities::Timeout &t);
+
 template<class T>
 class HashEntry
 {
@@ -72,6 +74,50 @@ private:
     return map.find(entry) != map.end();
   }
 
+
+  bool step(T *p)
+  {
+    typename T::delayed_event_t found_de;
+    if (p->removeEarliestDeadlineEvent(found_de))
+      {
+	warp_speed_clock(found_de.first);
+	
+	p->emit(found_de.second);
+	return true;
+      }
+    else
+      {
+	// no pending events, can only inject new events
+	return false;
+      }
+  }
+
+  bool send_events(T *p)
+  {
+    if (! already_seen(p))
+      {	
+	HashEntry<T> entry(p);
+	map[entry] = p;
+	
+	fprintf(stderr, "not already seen!\n");
+	for (auto event : p->getEventVector())
+	  {
+	    stats.creations++;
+	    T *clone = new T(*p);
+	    clone->do_emit(event);
+	    
+	    todo_stack.push(Todo<T*>{clone});
+	  }
+	return true;
+      }
+    else
+      {
+	fprintf(stderr, "already seen!\n");
+	stats.duplicates++;
+	return false;
+      }
+  }
+
   void process(const Todo<T*> &todo)
   {        
     T *p = todo.data;
@@ -79,39 +125,19 @@ private:
     bool done = false;
     while (!done)
       {
-	typename T::delayed_event_t found_de;
-	if (p->removeEarliestDeadlineEvent(found_de))
+	if (! send_events(p))
 	  {
-	    p->emit(found_de.second);
+	    // faled to send event.
 	  }
-	else
+	
+	if (! step(p))
 	  {
-	    // no pending events, can only inject new events
+	    // no pending events
 	    done = true;
-	  }
-	
-	if (! already_seen(p))
-	  {	
-	    HashEntry<T> entry(p);
-	    map[entry] = p;
-	
-	    fprintf(stderr, "not already seen!\n");
-	    for (auto event : p->getEventVector())
-	      {
-		stats.creations++;
-		T *clone = new T(*p);
-		clone->emit(event);
-
-		todo_stack.push(Todo<T*>{clone});
-	      }
-	  }
-	else
-	  {
-	    fprintf(stderr, "already seen!\n");
-	    stats.duplicates++;
-	    break;
-	  }
+	  }	
       }
+
+    assert(p->hasNoPendingEvents());
     delete p;
   }
   

@@ -34,6 +34,11 @@ class delayed_event_queue
       memset(valid, 0, sizeof(valid));
     }
 
+  bool empty() const
+  {
+    return size() == 0;
+  }
+
   HashValue getHash() const
   {
     HashValue hash(count);
@@ -67,8 +72,8 @@ class delayed_event_queue
   }
 
   size_t max_size() const { return _max_size; }
-  size_t num_elts() const { return count; }
-
+  size_t size() const     { return count; }
+  
   bool is_valid(size_t i) const
   {
     ASSERT(i < _max_size);
@@ -151,6 +156,11 @@ public:
   delayed_stack_t delayed_events_stack;
   Trace trace;
 
+  bool hasNoPendingEvents() const
+  {
+    return delayed_events_stack.empty();
+  }
+  
   EventVector getEventVector()
   {
     EventVector vec;
