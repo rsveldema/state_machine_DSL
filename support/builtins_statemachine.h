@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <utility>
+#include <string>
 
 #include "units.h"
 
@@ -60,5 +61,7 @@ void event_loop(const units::micros &us,
 
 
 #include "tracing.h"
+
+std::string convertToString(int32_t value);
 
 #endif

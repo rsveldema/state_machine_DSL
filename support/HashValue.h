@@ -29,6 +29,7 @@ public:
 
   
   bool operator < (const HashValue &e) const { return v < e.v; }
+  bool operator > (const HashValue &e) const { return v > e.v; }
   bool operator == (const HashValue &e) const { return v == e.v; }
   bool operator != (const HashValue &e) const { return v != e.v; }
 

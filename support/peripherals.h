@@ -15,6 +15,15 @@ class Stopwatch
   void start() { state = 3; }
   void stop()  { state = 4; }
 
+  Stopwatch()
+    {
+    }
+
+  Stopwatch(const Stopwatch &w)
+    : state(w.state)
+    {
+    }
+
   HashValue getHash() const { return state; }
   bool operator < (const Stopwatch &e) const { return getHash() < e.getHash(); }
   bool operator != (const Stopwatch &e) const { return state != e.state; }
@@ -54,8 +63,6 @@ class Pump
 };
 
 
-
-std::string convertToString(int32_t value);
 
 
 

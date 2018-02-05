@@ -7,7 +7,7 @@
 class TraceEntry
 {
  public:
-  static const unsigned STR_SIZE = 16;
+  static const unsigned STR_SIZE = 32;
   units::micros time;
   char string[STR_SIZE];
   

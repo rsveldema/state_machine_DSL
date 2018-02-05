@@ -206,6 +206,7 @@ def generate_declsBlock(f, state, decls):
     for d in decls:
         decl_name = str(d.ID()[1])
         write(f, "if (" + decl_name + " < other." + decl_name + ") {");
+        #write(f, "   LOG_DEBUG(\" \");");
         write(f, "   return true;");
         write(f, "}");
     write(f, "return false;");
@@ -306,13 +307,13 @@ def generate_machine_decl(f, decl, hashmethod, compare, equal_compare):
         write(f, str(names[0]) + " " + str(names[1]) + ";")
 
         if compare != None:
-            write(compare, "if (" + str(names[1]) + " < other." + str(names[1])+  ") return true;\n");
+            write(compare, "if (" + str(names[1]) + " < other." + str(names[1])+  ") return true;");
             
         if equal_compare != None:
-            write(equal_compare, "if (" + str(names[1]) + " != other." + str(names[1])+  ") return false;\n");
+            write(equal_compare, "if (" + str(names[1]) + " != other." + str(names[1])+  ") return false;");
             
         if hashmethod != None:
-            write(hashmethod, "hashValue.add(" + str(names[1]) + ".getHash());\n");
+            write(hashmethod, "hashValue.add(" + str(names[1]) + ".getHash());");
 
 def generate_events(f, codeRule, events):
     for r in codeRule:

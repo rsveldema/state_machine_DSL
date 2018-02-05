@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <memory>
 
 void warp_speed_clock(const ZEP::Utilities::Timeout &t);
 
@@ -19,19 +20,22 @@ template<class T>
 class HashEntry
 {
 private:
-  T *data;
+  std::shared_ptr<T> data;
   HashValue hash;
 
 public:
-  HashEntry(T *_data)
+  HashEntry(const std::shared_ptr<T> &_data)
     : data(_data),
       hash(data->getHash())
   {
     fprintf(stderr, "computed hash: %lx\n", (long) hash.get());
   }
-  
+
   bool operator < (const HashEntry &e) const
   {
+    assert((int)data->state != 0);
+    assert((int)e.data->state != 0);
+    
     if (hash == e.hash)
       {
 	return (*data < *e.data);
@@ -45,7 +49,7 @@ template<class T>
 class Todo
 {
 public:
-  T data;
+  std::shared_ptr<T> data;
 };
 
 
@@ -53,8 +57,8 @@ template<class T>
 class Modelchecker
 {
 private:
-  std::map<HashEntry<T>, T *> map;
-  std::stack<Todo<T*>> todo_stack;
+  std::map<HashEntry<T>, std::shared_ptr<T>> map;
+  std::stack<Todo<T>> todo_stack;
 
   struct Statictics {
     uint64_t creations = 0;
@@ -96,21 +100,21 @@ private:
     
   } stats;
 
-public:
-  Modelchecker(T *init)
-  {
-    todo_stack.push(Todo<T*>{init});
-  }
-
+ public:
+  Modelchecker(const std::shared_ptr<T> &init)
+    {
+      todo_stack.push(Todo<T>{init});
+    }
+  
 private:
-  bool already_seen(T *p)
+  bool already_seen(const std::shared_ptr<T> &p)
   {
     HashEntry<T> entry(p);
     return map.find(entry) != map.end();
   }
 
 
-  bool step(T *p)
+  bool step(const std::shared_ptr<T> &p)
   {
     typename T::delayed_event_t found_de;
     if (p->removeEarliestDeadlineEvent(found_de))
@@ -127,7 +131,7 @@ private:
       }
   }
 
-  bool send_events(T *p)
+  bool send_events(const std::shared_ptr<T> &p)
   {
     if (! already_seen(p))
       {	
@@ -138,10 +142,10 @@ private:
 	for (auto event : p->getEventVector())
 	  {
 	    stats.creations++;
-	    T *clone = new T(*p);
+	    std::shared_ptr<T> clone(new T(*p));
 	    clone->do_emit(event);
 	    
-	    todo_stack.push(Todo<T*>{clone});
+	    todo_stack.push(Todo<T>{clone});
 	  }
 	return true;
       }
@@ -153,9 +157,9 @@ private:
       }
   }
 
-  void process(const Todo<T*> &todo)
+  void process(const Todo<T> &todo)
   {        
-    T *p = todo.data;
+    const std::shared_ptr<T> &p = todo.data;
 
     bool done = false;
     while (!done)
@@ -195,7 +199,6 @@ private:
 	  }
       }
     fprintf(stderr, "------------------   trying next one!\n");
-    delete p;
   }
   
 public:
@@ -203,7 +206,7 @@ public:
   {
     while (! todo_stack.empty())
       {
-	Todo<T*> t = todo_stack.top();
+	Todo<T> t = todo_stack.top();
 	todo_stack.pop();
 	
 	process(t);

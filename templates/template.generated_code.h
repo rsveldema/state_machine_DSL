@@ -109,12 +109,23 @@ class delayed_event_queue
       {
 	for (unsigned i = 0; i < count; i++)
 	  {
-	    const T &e1 = get(i).second;
-	    const T &e2 = other.get(i).second;
-	    
-	    if (e1.getHash() < e2.getHash())
+	    if (! valid[i] && other.valid[i])
 	      {
 		return true;
+	      }
+	    else if (valid[i] && ! other.valid[i])
+	      {
+		return false;
+	      }
+	    else if (valid[i] && other.valid[i])
+	      {
+		const T &e1 = get(i).second;
+		const T &e2 = other.get(i).second;
+		
+		if (e1.getHash() < e2.getHash())
+		  {
+		    return true;
+		  }
 	      }
 	  }
       }
@@ -196,7 +207,7 @@ public:
     std::string toString() const {
       if (descr == NULL) {
 	char buf[16];
-	sprintf(buf, "%d", type);
+	sprintf(buf, "%d", (int)type);
 	return buf;
       }
       return descr;
@@ -261,7 +272,12 @@ public:
       
       return ret;
     }
-    
+
+  bool operator == (const {{state_machine_name}} &other) const
+  {
+    fprintf(stderr, "OPERATOR ==!\n");
+    return equals(other, true);
+  }
   
   bool equals (const {{state_machine_name}} &other, bool ignore_deadline) const
   {
