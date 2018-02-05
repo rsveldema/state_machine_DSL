@@ -7,7 +7,7 @@
  * When doing normal unit tests we use physical time as there it may be more important.
  */
 
-static uint64_t t;
+static uint64_t t = 0;
 
 // in the model checker we do not want the actual time used
 units::micros currentTimeMicros()

@@ -77,6 +77,7 @@ class delayed_event_queue
   bool is_valid(size_t i) const
   {
     ASSERT(i < _max_size);
+    ASSERT(count >= 0);
     return valid[i];
   }
 
@@ -84,6 +85,7 @@ class delayed_event_queue
   {
     ASSERT(i < _max_size);
     ASSERT(valid[i]);
+    ASSERT(count > 0);
     return elts[i];
   }
 
@@ -156,9 +158,9 @@ public:
   delayed_stack_t delayed_events_stack;
   Trace trace;
 
-  bool hasNoPendingEvents() const
+  bool hasPendingEvents() const
   {
-    return delayed_events_stack.empty();
+    return ! delayed_events_stack.empty();
   }
   
   EventVector getEventVector()
@@ -180,7 +182,21 @@ public:
   bool operator < (const {{state_machine_name}} &other) const
   {
     {{COMPARE_FIELDS}}
-    return delayed_events_stack < other.delayed_events_stack;
+    
+    if (delayed_events_stack < other.delayed_events_stack)
+      {
+	return true;
+      }
+    switch (state)
+      {
+	case STATES::STATE_NONE:
+	  {
+	    ASSERT(0);
+	  }
+	  
+	{{COMPARE_STATES}}
+      }
+    return false;
   }
   
   {{MAIN_CODE}}
@@ -238,6 +254,7 @@ public:
   bool removeEarliestDeadlineEvent(delayed_event_t &found_de)
   {
     ZEP::Utilities::Timeout earliest_time;
+    int earliest_index = -1;
     bool success = false;
     for (size_t i = 0; i < delayed_events_stack.max_size(); i++)
       {
@@ -246,25 +263,34 @@ public:
 	    const delayed_event_t &de = delayed_events_stack.get(i);
 	    const ZEP::Utilities::Timeout t = de.first;
 	    
-	    if (t.hasElapsed())
+	    if (! success)
 	      {
-		if (! success)
+		success = true;
+		
+		earliest_time = t;
+		found_de = de;
+		earliest_index = i;
+	      }
+	    else
+	      {
+		if (earliest_time > t)
 		  {
 		    earliest_time = t;
 		    found_de = de;
+		    earliest_index = i;
 		  }
-		else
-		  {
-		    if (earliest_time > t)
-		      {
-			earliest_time = t;
-			found_de = de;
-		      }
-		  }
-		
-		success = true;
 	      }
 	  }
+      }
+    if (success)
+      {
+	fprintf(stderr, "---- erase: %d\n", earliest_index);
+	assert(earliest_index >= 0);
+	delayed_events_stack.erase(earliest_index);
+      }
+    else
+      {
+	fprintf(stderr, "---- failed to retrieve earliest event\n");
       }
     return success;
   }  

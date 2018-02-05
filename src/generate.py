@@ -201,9 +201,20 @@ def generate_declsBlock(f, state, decls):
     for d in decls:
         generate_machine_decl(f, d, None, None)
 
+    name = stateName2String(state.stateName())
+    write(f, "bool operator < (const TYPE_" + name + " &other) const {");
+    for d in decls:
+        decl_name = str(d.ID()[1])
+        write(f, "if (" + decl_name + " < other." + decl_name + ") {");
+        write(f, "   return true;");
+        write(f, "}");
+    write(f, "return false;");
+    write(f, "}");
+
 def generate_machine_state(f, state, state_list):
     if state != None:
         name = stateName2String(state.stateName())
+        
         write(f, "class TYPE_" + name + " {");
         write(f, "public:");
         generate_eventHandler(f, state.eventHandler());
@@ -291,15 +302,25 @@ def generate_event_handler(f, codeRule, state_list):
     for r in codeRule:
         generate_machine_event_handler(f, r.eventRule(), state_list)
         
-def generate_states(f, codeRule, state_list):
+def generate_states(f, codeRule, state_list, states_compare):
     for r in codeRule:
         generate_machine_state(f, r.stateRule(), state_list)
-
+        
     f.write("union {\n");
     for s in state_list:
         name = stateName2String(s.stateName())
         f.write("TYPE_" + name + " " + name + ";\n");
     f.write("} state_union;\n\n");
+
+    for s in state_list:
+        name = stateName2String(s.stateName())
+        write(states_compare, "case STATES::STATE_" + name + ": {")
+        write(states_compare, "   if (state_union." + name + " < other.state_union." + name + ") {");
+        write(states_compare, "       return true;");
+        write(states_compare, "   }");
+        write(states_compare, "   break;");
+        write(states_compare, "}");
+
 
 def generate_states_enum(f, codeRule, state_list):
     for r in codeRule:
@@ -330,8 +351,9 @@ def generate_constructor(h, machineRule):
             first = False
 
 class CGeneratorListener(dslListener):
-    def __init__(self, h, test, enums, hashmethod, events, compare):
+    def __init__(self, h, test, enums, hashmethod, events, compare, states_compare):
         self.test = test
+        self.states_compare = states_compare
         self.compare = compare
         self.events = events
         self.h = h
@@ -408,7 +430,7 @@ class CGeneratorListener(dslListener):
         write(self.h, "");
         generate_decls(self.h, ctxt.codeRule(), self.hashmethod, self.compare)
         write(self.h, "");
-        generate_states(self.h, ctxt.codeRule(), state_list)
+        generate_states(self.h, ctxt.codeRule(), state_list, self.states_compare)
 
         write(self.h, "void do_emit(const Event &event) {");
         write(self.h, "switch (event.getType()) {");
@@ -502,8 +524,9 @@ def generateC(tree, fileName, baseName):
     enums      = StringStream()
     events     = StringStream()
     compare    = StringStream()
+    states_compare = StringStream()
 
-    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare)
+    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare, states_compare)
     walker  = ParseTreeWalker()
     walker.walk(printer, tree)
 
@@ -522,6 +545,7 @@ def generateC(tree, fileName, baseName):
     names['ENUM_CODE'] = enums.code
     names['HASH_CODE'] = hashmethod.code
     names['COMPARE_FIELDS'] = compare.code
+    names['COMPARE_STATES'] = states_compare.code
     names['EVENT_VEC'] = events.code
     rendered = pystache.Renderer().render(f, names)
     

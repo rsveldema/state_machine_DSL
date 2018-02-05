@@ -82,7 +82,7 @@ private:
       {
 	warp_speed_clock(found_de.first);
 	
-	p->emit(found_de.second);
+	p->do_emit(found_de.second);
 	return true;
       }
     else
@@ -127,17 +127,16 @@ private:
       {
 	if (! send_events(p))
 	  {
-	    // faled to send event.
+	    fprintf(stderr, "failed to send events, machine already seen\n");
 	  }
 	
 	if (! step(p))
 	  {
-	    // no pending events
+	    fprintf(stderr, "no pending events\n");
 	    done = true;
-	  }	
+	  }
       }
-
-    assert(p->hasNoPendingEvents());
+    fprintf(stderr, "------------------   trying next one!\n");
     delete p;
   }
   
