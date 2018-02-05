@@ -12,7 +12,7 @@
 #include "builtins_statemachine.h"
 #include "support_{{base_name}}.h"
 #include "tiny_vector.hpp"
-
+#include <string>
 #include "HashValue.h"
 
 
@@ -49,6 +49,56 @@ class delayed_event_queue
     return hash;
   }
 
+  bool equals(const delayed_event_queue &other, bool ignore_deadline) const
+  {
+    if (count != other.count)
+      {
+	return false;
+      }
+
+    for (unsigned i = 0; i < _max_size; i++)
+      {
+	if (valid[i] != other.valid[i])
+	  {
+	    return false;
+	  }
+	
+	if (valid[i])
+	  {
+	    if (! ignore_deadline)
+	      {
+		if (elts[i].first != other.elts[i].first)
+		  {
+		    return false;
+		  }
+	      }
+	    if (elts[i].second != other.elts[i].second)
+	      {
+		return false;
+	      }
+	  }
+      }
+    return true;
+  }
+
+  std::string toString() const
+    {
+      std::string ret("delayed<");
+      for (unsigned i=0;i<count;i++)
+	{
+	  if (valid[i])
+	    {
+	      ret += "(";
+	      ret += elts[i].first.toString();
+	      ret += ", ";
+	      ret += elts[i].second.toString();
+	      ret += ")";
+	    }
+	}
+      ret += ">";
+      return ret;
+    }
+  
   bool operator < (const delayed_event_queue &other) const
   {
     if (count < other.count)
@@ -142,11 +192,25 @@ public:
 	payload(0)
     {
     }
+
+    std::string toString() const {
+      if (descr == NULL) {
+	char buf[16];
+	sprintf(buf, "%d", type);
+	return buf;
+      }
+      return descr;
+    }
     
     EVENT getType() const { return type; }
     int64_t getPayload() const { return payload; }
     
     HashValue getHash() const { return payload | (uint64_t) type; }
+
+    bool operator != (const Event &ev) const
+    {
+      return type != ev.type || payload != ev.payload;
+    }
   };
 
   static const size_t MAX_EVENTS = 16;
@@ -178,6 +242,46 @@ public:
 
     return hashValue;
   }
+
+  std::string toString() const
+    {
+      std::string ret("{{state_machine_name}}<");
+      ret += delayed_events_stack.toString();
+      ret += ">, ";
+
+      switch (state)
+	{
+	  case STATES::STATE_NONE:
+	  {
+	    ASSERT(0);
+	  }
+
+	  {{STATES_TO_STRING}}
+	}
+      
+      return ret;
+    }
+    
+  
+  bool equals (const {{state_machine_name}} &other, bool ignore_deadline) const
+  {
+    {{EQUAL_FIELDS}}
+
+    if (delayed_events_stack.equals(other.delayed_events_stack, ignore_deadline))
+      {
+	switch (state)
+	  {
+	  case STATES::STATE_NONE:
+	  {
+	    ASSERT(0);
+	  }
+	  
+	  {{EQUAL_STATES}}
+	  }
+      }
+    return false;
+  }
+
   
   bool operator < (const {{state_machine_name}} &other) const
   {
@@ -250,7 +354,6 @@ public:
     do_emit(event);
   }
 
-  
   bool removeEarliestDeadlineEvent(delayed_event_t &found_de)
   {
     ZEP::Utilities::Timeout earliest_time;

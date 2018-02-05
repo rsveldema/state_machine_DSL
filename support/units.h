@@ -1,6 +1,8 @@
 #ifndef UNITS__H____H_
 #define UNITS__H____H_
 
+#include <string>
+
 namespace units
 {
   class micros
@@ -12,6 +14,13 @@ namespace units
     micros(uint64_t _t)
       : value(_t)
     {
+    }
+
+    std::string toString() const
+    {
+      char buf[32];
+      sprintf(buf, "%d.%d", (int)to_secs(), (int) to_millis() % 1000);
+      return buf;
     }
 
     uint64_t get() const { return value; }
@@ -34,6 +43,16 @@ namespace units
     bool operator < (const micros &t) const
     {
       return value < t.value;
+    }
+
+    bool operator != (const micros &t) const
+    {
+      return value != t.value;
+    }
+
+    bool operator == (const micros &t) const
+    {
+      return value == t.value;
     }
 
     const micros operator + (const micros &t) const
@@ -86,6 +105,7 @@ namespace ZEP
       : deadline(0)
 	{      
 	}
+      
     Timeout(const Timeout &t)
       : deadline(t.deadline)
 	{
@@ -95,13 +115,20 @@ namespace ZEP
       : deadline(time + currentTimeMicros())
 	{
 	}
-
+      
       Timeout &operator = (const Timeout &t)
-	{
-	  this->deadline = t.deadline;
-	  return *this;
-	}
-  
+      {
+	this->deadline = t.deadline;
+	return *this;
+      }
+
+
+      std::string toString() const
+      {
+	return "timeout:" + deadline.toString();
+      }
+
+      
       bool hasElapsed() const
       {
 	const units::micros &now = currentTimeMicros();
@@ -113,6 +140,16 @@ namespace ZEP
       bool operator < (const Timeout &t2) const
       {
 	return get() < t2.get();
+      }
+
+      bool operator != (const Timeout &t2) const
+      {
+	return get() != t2.get();
+      }
+
+      bool operator == (const Timeout &t2) const
+      {
+	return get() == t2.get();
       }
 
       bool operator > (const Timeout &t2) const

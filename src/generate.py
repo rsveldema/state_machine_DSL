@@ -199,7 +199,7 @@ def generate_exitBlock(f, state, exitBlkList):
 
 def generate_declsBlock(f, state, decls):
     for d in decls:
-        generate_machine_decl(f, d, None, None)
+        generate_machine_decl(f, d, None, None, None)
 
     name = stateName2String(state.stateName())
     write(f, "bool operator < (const TYPE_" + name + " &other) const {");
@@ -209,6 +209,23 @@ def generate_declsBlock(f, state, decls):
         write(f, "   return true;");
         write(f, "}");
     write(f, "return false;");
+    write(f, "}");
+
+    write(f, "bool operator == (const TYPE_" + name + " &other) const {");
+    for d in decls:
+        decl_name = str(d.ID()[1])
+        write(f, "if (" + decl_name + " != other." + decl_name + ") {");
+        write(f, "   return false;");
+        write(f, "}");
+    write(f, "return true;");
+    write(f, "}");
+
+    write(f, "std::string toString () const {");
+    write(f, "std::string ret(\"STATE:" + name + "\");");
+    for d in decls:
+        decl_name = str(d.ID()[1])
+        write(f, "ret += \"," + decl_name + "=\" + convertToString(" + decl_name + ");");
+    write(f, "return ret;");
     write(f, "}");
 
 def generate_machine_state(f, state, state_list):
@@ -283,13 +300,16 @@ def generate_machine_event_handler(f, event, state_list):
 
         write(f, "}");
 
-def generate_machine_decl(f, decl, hashmethod, compare):
+def generate_machine_decl(f, decl, hashmethod, compare, equal_compare):
     if decl != None:
         names = decl.ID()
         write(f, str(names[0]) + " " + str(names[1]) + ";")
 
         if compare != None:
             write(compare, "if (" + str(names[1]) + " < other." + str(names[1])+  ") return true;\n");
+            
+        if equal_compare != None:
+            write(equal_compare, "if (" + str(names[1]) + " != other." + str(names[1])+  ") return false;\n");
             
         if hashmethod != None:
             write(hashmethod, "hashValue.add(" + str(names[1]) + ".getHash());\n");
@@ -302,7 +322,7 @@ def generate_event_handler(f, codeRule, state_list):
     for r in codeRule:
         generate_machine_event_handler(f, r.eventRule(), state_list)
         
-def generate_states(f, codeRule, state_list, states_compare):
+def generate_states(f, codeRule, state_list, states_compare, equal_states_compare, states_str):
     for r in codeRule:
         generate_machine_state(f, r.stateRule(), state_list)
         
@@ -321,6 +341,18 @@ def generate_states(f, codeRule, state_list, states_compare):
         write(states_compare, "   break;");
         write(states_compare, "}");
 
+        write(equal_states_compare, "case STATES::STATE_" + name + ": {")
+        write(equal_states_compare, "   if (state_union." + name + " == other.state_union." + name + ") {");
+        write(equal_states_compare, "       return true;");
+        write(equal_states_compare, "   }");
+        write(equal_states_compare, "   break;");
+        write(equal_states_compare, "}");
+
+        write(states_str, "case STATES::STATE_" + name + ": {")
+        write(states_str, "   ret += state_union." + name + ".toString();");
+        write(states_str, "   break;");
+        write(states_str, "}");
+
 
 def generate_states_enum(f, codeRule, state_list):
     for r in codeRule:
@@ -331,9 +363,9 @@ def generate_event_enum(f, codeRule):
         generate_machine_event_enum(f, r.eventRule())
 
         
-def generate_decls(f, codeRule, hashmethod, compare):
+def generate_decls(f, codeRule, hashmethod, compare, equal_compare):
     for r in codeRule:
-        generate_machine_decl(f, r.declRule(), hashmethod, compare)
+        generate_machine_decl(f, r.declRule(), hashmethod, compare, equal_compare)
 
 def generate_event_ctor_call(h, eventRule, first):
     prefix = ": " if first else ", "
@@ -351,7 +383,10 @@ def generate_constructor(h, machineRule):
             first = False
 
 class CGeneratorListener(dslListener):
-    def __init__(self, h, test, enums, hashmethod, events, compare, states_compare):
+    def __init__(self, h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str):
+        self.states_str = states_str;
+        self.equal_compare = equal_compare
+        self.equal_states_compare = equal_states_compare
         self.test = test
         self.states_compare = states_compare
         self.compare = compare
@@ -428,9 +463,9 @@ class CGeneratorListener(dslListener):
         write(self.h, "");
         generate_event_handler(self.h, ctxt.codeRule(), state_list)
         write(self.h, "");
-        generate_decls(self.h, ctxt.codeRule(), self.hashmethod, self.compare)
+        generate_decls(self.h, ctxt.codeRule(), self.hashmethod, self.compare, self.equal_compare)
         write(self.h, "");
-        generate_states(self.h, ctxt.codeRule(), state_list, self.states_compare)
+        generate_states(self.h, ctxt.codeRule(), state_list, self.states_compare, self.equal_states_compare, self.states_str)
 
         write(self.h, "void do_emit(const Event &event) {");
         write(self.h, "switch (event.getType()) {");
@@ -525,8 +560,11 @@ def generateC(tree, fileName, baseName):
     events     = StringStream()
     compare    = StringStream()
     states_compare = StringStream()
+    states_str = StringStream()
+    equal_compare    = StringStream()
+    equal_states_compare = StringStream()
 
-    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare, states_compare)
+    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str)
     walker  = ParseTreeWalker()
     walker.walk(printer, tree)
 
@@ -546,7 +584,10 @@ def generateC(tree, fileName, baseName):
     names['HASH_CODE'] = hashmethod.code
     names['COMPARE_FIELDS'] = compare.code
     names['COMPARE_STATES'] = states_compare.code
+    names['EQUAL_FIELDS'] = equal_compare.code
+    names['EQUAL_STATES'] = equal_states_compare.code
     names['EVENT_VEC'] = events.code
+    names['STATES_TO_STRING'] = states_str.code
     rendered = pystache.Renderer().render(f, names)
     
     h = open("generated_state_machine_"+baseName+".hpp", "w")

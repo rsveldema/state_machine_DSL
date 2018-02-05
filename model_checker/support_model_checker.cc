@@ -22,3 +22,11 @@ void warp_speed_clock(const ZEP::Utilities::Timeout &timeout)
 
   fprintf(stderr, "-----> time warp from %lld to %lld\n", (long long) old, (long long) t);
 }
+
+
+std::string convertToString(int32_t value)
+{
+  char buf[32];
+  sprintf(buf, "%d", value);
+  return buf;
+}

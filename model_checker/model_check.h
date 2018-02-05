@@ -1,7 +1,19 @@
 #include <map>
 #include <stack>
+#include <string>
+#include <algorithm>
+#include <vector>
 
 void warp_speed_clock(const ZEP::Utilities::Timeout &t);
+
+
+
+template<typename T, typename K>
+bool contains(const T &l, const K &k)
+{
+  return std::find(l.begin(), l.end(), k) != l.end();
+}
+
 
 template<class T>
 class HashEntry
@@ -47,18 +59,41 @@ private:
   struct Statictics {
     uint64_t creations = 0;
     uint64_t duplicates = 0;
-
+    uint64_t steps = 0;
+    
+    uint64_t warnings = 0;
+    std::vector<std::string> logged_warnings;
+    
     void dump()
     {
       fprintf(stderr, "------------------------------------\n");
       fprintf(stderr, "------ MODEL CHECKING REPORT -------\n");
+      fprintf(stderr, "    STEPS: %ld\n", (long)steps);
       fprintf(stderr, "    CREATED machines:   %ld\n", (long)creations);
       fprintf(stderr, "    DUPLICATE machines: %ld", (long)duplicates);
 
       double effectiveness = 100 * ((double)duplicates / (double) creations);
       fprintf(stderr, "        (hash effectiveness %4.0f %%)\n", effectiveness);
+
+      fprintf(stderr, "    WARNINGS: %ld", (long)warnings);
+      for (std::string msg : logged_warnings)
+	{
+	  fprintf(stderr, "\tWARN: %s\n", msg.c_str());
+	}
       fprintf(stderr, "------------------------------------\n");
     }
+
+
+    void warn(const std::string &msg)
+    {
+      fprintf(stderr, "WARNING: %s\n", msg.c_str());
+
+      if (! contains(logged_warnings, msg))
+	{
+	  logged_warnings.push_back(msg);
+	}
+    }
+    
   } stats;
 
 public:
@@ -79,7 +114,7 @@ private:
   {
     typename T::delayed_event_t found_de;
     if (p->removeEarliestDeadlineEvent(found_de))
-      {
+      {	
 	warp_speed_clock(found_de.first);
 	
 	p->do_emit(found_de.second);
@@ -129,11 +164,34 @@ private:
 	  {
 	    fprintf(stderr, "failed to send events, machine already seen\n");
 	  }
-	
+
+	T temp(*p);
 	if (! step(p))
 	  {
-	    fprintf(stderr, "no pending events\n");
+	    //fprintf(stderr, "XXXXXX  no pending events\n");
 	    done = true;
+	  }
+	else
+	  {
+	    stats.steps++;
+	    if (temp.equals(*p, false))
+	      {
+		done = true;
+	      }
+	    else if (temp.equals(*p, true))
+	      {
+		std::string msg("the only difference after state comparison is a deadline change due to a re-submitted command.\n");
+		msg += "\t\tBEFORE: " + temp.toString() + "\n";
+		msg += "\t\tAFTER:  " + p->toString() + "\n";
+
+		
+		stats.warn(msg);
+		done = true;
+	      }
+	    else
+	      {
+		//fprintf(stderr, "XXXXXXX state machine is different after stepping?\n");
+	      }
 	  }
       }
     fprintf(stderr, "------------------   trying next one!\n");

@@ -4,7 +4,7 @@
 
 #include <assert.h>
 #include "HashValue.h"
-
+#include <string>
 
 class Stopwatch
 {
@@ -17,6 +17,7 @@ class Stopwatch
 
   HashValue getHash() const { return state; }
   bool operator < (const Stopwatch &e) const { return getHash() < e.getHash(); }
+  bool operator != (const Stopwatch &e) const { return state != e.state; }
 };
 
 class Boiler
@@ -32,6 +33,7 @@ class Boiler
 
   HashValue getHash() const { return enabled; }
   bool operator < (const Boiler &e) const { return getHash() < e.getHash(); }
+  bool operator != (const Boiler &e) const { return enabled != e.enabled; }
   
   void on()   { assert(! enabled); enabled = true;  t = ZEP::Utilities::Timeout(units::secs(4)); }
   void off()  { assert(enabled);   enabled = false; t = ZEP::Utilities::Timeout(0); }
@@ -48,9 +50,12 @@ class Pump
 
   HashValue getHash() const { return state; }
   bool operator < (const Pump &e) const { return getHash() < e.getHash(); }
+  bool operator != (const Pump &e) const { return state != e.state; }
 };
 
 
+
+std::string convertToString(int32_t value);
 
 
 

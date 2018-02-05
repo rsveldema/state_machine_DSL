@@ -19,6 +19,7 @@ class Led
 
   HashValue getHash() const { return id | state << 12; }
   bool operator < (const Led &e) const { return getHash() < e.getHash(); }
+  bool operator != (const Led &e) const { return getHash() != e.getHash(); }
   
   void init(int id) { this->id = id; }
   
