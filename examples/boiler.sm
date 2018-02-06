@@ -71,6 +71,7 @@ machine WaterBoiler {
 
 
     event tick {
+      warmup_steps += 1;
       if (warmup_steps < 4) {
 	after secs(1) emit tick;
       } else {
@@ -87,6 +88,16 @@ machine WaterBoiler {
        after secs(1) emit tick;
     }
 
+    event button_start
+    {
+      // ignore event
+    }
+
+    event button_on
+    {
+        // ignore event
+    }
+
     event tick {
       if (boiler.done()) {
 	printf("boiler has finished\n");
@@ -100,6 +111,7 @@ machine WaterBoiler {
 
   state brewing::finish_boiling {
     entry {
+      boiler.off();
       pump.off();
       transition on;
     }

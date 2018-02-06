@@ -78,8 +78,14 @@ class Trace
   }
 };
 
+
+#if STATE_MACHINE_SUPPORT_TRACES
 #define SM_LOG(STRING)             { fprintf(stderr, "LOG: %s\n", STRING); }
 #define SM_TRACE(STRING)           { self->trace.add(STRING); fprintf(stderr, "TRACE: %s\n", STRING); }
+#else
+#define SM_LOG(STRING)   
+#define SM_TRACE(STRING)
+#endif
 
 
 #endif

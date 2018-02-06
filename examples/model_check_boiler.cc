@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv)
 {
-  std::shared_ptr<WaterBoiler> p( new WaterBoiler() );
+  auto p = new WaterBoiler();
   
   p->transition(p->state_union.bootup);
   Modelchecker<WaterBoiler> mc(p);

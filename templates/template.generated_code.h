@@ -231,7 +231,10 @@ public:
   typedef delayed_event_queue <Event, MAX_DELAYED_EVENTS> delayed_stack_t;
   typedef delayed_stack_t::delayed_event_t delayed_event_t;
   delayed_stack_t delayed_events_stack;
+
+#if STATE_MACHINE_SUPPORT_TRACES
   Trace trace;
+#endif
 
   bool hasPendingEvents() const
   {

@@ -25,9 +25,11 @@ testsuite buttonBoiling {
     
     emit button_start;
     wait secs(6); // wait for boiling water
-    
+
+#if STATE_MACHINE_SUPPORT_TRACES
     assert self->trace.contains("ENTER STATE: finish_boiling");
     self->trace.dump();
+#endif
   }
 }
 

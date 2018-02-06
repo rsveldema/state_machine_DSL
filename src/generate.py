@@ -294,7 +294,8 @@ def generate_machine_event_handler(f, event, state_list):
             if hasEventHandler(state, eventname):
                 write(f, "state_union." + statename + ".handler_" + eventname + "(this);");
             else:
-                write(f, "STATE_MISSING_EVENT_HANDLER(\"" + statename + "\" , \"" + eventname + "\");");
+                pretty_name = stateName2PrettyString(state.stateName())
+                write(f, "STATE_MISSING_EVENT_HANDLER(\"" + pretty_name + "\" , \"" + eventname + "\");");
             write(f, "break;");
             write(f, "}");
         write(f, "}");

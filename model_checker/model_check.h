@@ -20,15 +20,15 @@ template<class T>
 class HashEntry
 {
 private:
-  std::shared_ptr<T> data;
+  const T * const data;
   HashValue hash;
 
 public:
-  HashEntry(const std::shared_ptr<T> &_data)
+  HashEntry(const T * const &_data)
     : data(_data),
       hash(data->getHash())
   {
-    fprintf(stderr, "computed hash: %lx\n", (long) hash.get());
+    //fprintf(stderr, "computed hash: %lx\n", (long) hash.get());
   }
 
   bool operator < (const HashEntry &e) const
@@ -49,7 +49,7 @@ template<class T>
 class Todo
 {
 public:
-  std::shared_ptr<T> data;
+  T* data;
 };
 
 
@@ -57,7 +57,7 @@ template<class T>
 class Modelchecker
 {
 private:
-  std::map<HashEntry<T>, std::shared_ptr<T>> map;
+  std::map<HashEntry<T>, T*> hashmap;
   std::stack<Todo<T>> todo_stack;
 
   struct Statictics {
@@ -101,20 +101,28 @@ private:
   } stats;
 
  public:
-  Modelchecker(const std::shared_ptr<T> &init)
+  Modelchecker(T* init)
     {
       todo_stack.push(Todo<T>{init});
     }
   
 private:
-  bool already_seen(const std::shared_ptr<T> &p)
+  bool already_seen_or_add(T* &p)
   {
     HashEntry<T> entry(p);
-    return map.find(entry) != map.end();
+    if (hashmap.find(entry) == hashmap.end())
+      {
+	hashmap[entry] = new T(*p);
+	return false;
+      }
+    else
+      {
+	return true;
+      }
   }
 
 
-  bool step(const std::shared_ptr<T> &p)
+  bool step(T* &p)
   {
     typename T::delayed_event_t found_de;
     if (p->removeEarliestDeadlineEvent(found_de))
@@ -131,18 +139,15 @@ private:
       }
   }
 
-  bool send_events(const std::shared_ptr<T> &p)
+  bool send_events(T* &p)
   {
-    if (! already_seen(p))
-      {	
-	HashEntry<T> entry(p);
-	map[entry] = p;
-	
-	fprintf(stderr, "not already seen!\n");
+    if (! already_seen_or_add(p))
+      {
+	//fprintf(stderr, "not already seen!\n");
 	for (auto event : p->getEventVector())
 	  {
 	    stats.creations++;
-	    std::shared_ptr<T> clone(new T(*p));
+	    T* clone(new T(*p));
 	    clone->do_emit(event);
 	    
 	    todo_stack.push(Todo<T>{clone});
@@ -151,15 +156,15 @@ private:
       }
     else
       {
-	fprintf(stderr, "already seen!\n");
+	//fprintf(stderr, "already seen!\n");
 	stats.duplicates++;
 	return false;
       }
   }
 
-  void process(const Todo<T> &todo)
+  void process(Todo<T> &todo)
   {        
-    const std::shared_ptr<T> &p = todo.data;
+    T* p = todo.data;
 
     bool done = false;
     while (!done)
@@ -199,6 +204,7 @@ private:
 	  }
       }
     fprintf(stderr, "------------------   trying next one!\n");
+    delete p;
   }
   
 public:
