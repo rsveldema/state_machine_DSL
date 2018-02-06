@@ -1,7 +1,7 @@
 
 CXXFLAGS=-c -std=c++11 -g2 -I$(HOME)/CUnitHome/include -DUSE_CUNIT=1 -I. -I../support -MMD
-CXXFLAGS_MC=$(CXXFLAGS) -fsanitize=address
-LDFLAGS_MC=$(LDFLAGS) -fsanitize=address
+CXXFLAGS_MC=$(CXXFLAGS) #-fsanitize=address
+LDFLAGS_MC=$(LDFLAGS) #-fsanitize=address
 
 LDFLAGS=$(HOME)/CUnitHome/lib/libcunit.a
 
