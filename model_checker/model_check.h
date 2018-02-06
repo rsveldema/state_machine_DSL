@@ -93,7 +93,7 @@ private:
       double effectiveness = 100 * ((double)hash_duplicates / (double) hash_checks);
       fprintf(stderr, "        (hash effectiveness %4.0f %%)\n", effectiveness);
 
-      fprintf(stderr, "    WARNINGS: %ld", (long)warnings);
+      fprintf(stderr, " ----------  %ld WARNINGS ----------\n", (long)warnings);
       for (std::string msg : logged_warnings)
 	{
 	  fprintf(stderr, "\tWARN: %s\n", msg.c_str());
