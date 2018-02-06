@@ -127,7 +127,7 @@ codeRule
 declRule
 eventRule
 eventModifier
-state_modifier
+stateModifier
 stateRule
 stateName
 entryBlock

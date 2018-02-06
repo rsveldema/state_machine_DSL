@@ -4,9 +4,9 @@
 
 int main(int argc, char **argv)
 {
-  auto p = new WaterBoiler();
+  WaterBoiler *p = new WaterBoiler();
   
-  p->transition(p->state_union.bootup);
+  p->initial_transition(p->state_union.bootup);
   Modelchecker<WaterBoiler> mc(p);
   mc.run();
   return 0;

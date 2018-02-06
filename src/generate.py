@@ -229,6 +229,12 @@ def generate_declsBlock(f, state, decls):
     write(f, "return ret;");
     write(f, "}");
 
+
+def isInitialState(modlist):
+    for m in modlist:
+        return True
+    return False
+
 def generate_machine_state(f, state, state_list):
     if state != None:
         name = stateName2String(state.stateName())
@@ -249,9 +255,21 @@ def generate_machine_state(f, state, state_list):
             state_name = stateName2String(state.stateName())
             write(f, "case STATES::STATE_" + state_name + ": state_union."+state_name+".exit(this); break;");
         write(f, "}");
-        
         write(f, "state_union." + name + ".entry(this);");
         write(f, "}");
+
+        print("initial state["+name+"]: " + str(state.stateModifier()))
+        if True: #isInitialState(state.stateModifier()):
+            write(f, "void initial_transition(const TYPE_"+name+" &) {");
+            write(f, "switch (state) {");
+            write(f, "default: break; ");
+            write(f, "case STATES::STATE_NONE: break;");
+            for state in state_list:
+                state_name = stateName2String(state.stateName())
+                write(f, "case STATES::STATE_" + state_name + ": state_union."+state_name+".exit(this); break;");
+            write(f, "}");
+            write(f, "state_union." + name + ".entry(this);");
+            write(f, "}");
                         
 
 def generate_machine_state_enum(f, state, state_list):

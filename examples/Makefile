@@ -1,12 +1,15 @@
 
 CXXFLAGS=-c -std=c++11 -g2 -I$(HOME)/CUnitHome/include -DUSE_CUNIT=1 -I. -I../support -MMD
+CXXFLAGS_MC=$(CXXFLAGS) -fsanitize=address
+LDFLAGS_MC=$(LDFLAGS) -fsanitize=address
+
 LDFLAGS=$(HOME)/CUnitHome/lib/libcunit.a
 
 all: test_boiler test_power_manager test_blinky model_check_boiler
 
 model_check_boiler: generated_test_boiler.cc
-	g++ $(CXXFLAGS) model_check_boiler.cc ../model_checker/support_model_checker.cc -DUSE_MODELCHECK
-	g++ model_check_boiler.o support_model_checker.o -o model_check_boiler
+	g++ $(CXXFLAGS_MC) model_check_boiler.cc ../model_checker/support_model_checker.cc -DUSE_MODELCHECK
+	g++ model_check_boiler.o support_model_checker.o -o model_check_boiler $(LDFLAGS_MC)
 
 generated_test_power_manager.cc: power_manager.sm
 	@echo "------------ generate code"

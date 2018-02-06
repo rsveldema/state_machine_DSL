@@ -20,15 +20,20 @@ template<class T>
 class HashEntry
 {
 private:
-  const T * const data;
+  T *data;
   HashValue hash;
 
 public:
-  HashEntry(const T * const &_data)
+  HashEntry(T *_data)
     : data(_data),
       hash(data->getHash())
   {
     //fprintf(stderr, "computed hash: %lx\n", (long) hash.get());
+  }
+
+  void set(T *a)
+  {
+    data = a;
   }
 
   bool operator < (const HashEntry &e) const
@@ -48,8 +53,15 @@ public:
 template<class T>
 class Todo
 {
-public:
+ private:
   T* data;
+
+ public:
+  Todo(T *d)
+    : data(d)
+    {
+    }
+  T *get() const { return data; }
 };
 
 
@@ -62,7 +74,8 @@ private:
 
   struct Statictics {
     uint64_t creations = 0;
-    uint64_t duplicates = 0;
+    uint64_t hash_duplicates = 0;
+    uint64_t hash_checks = 0;
     uint64_t steps = 0;
     
     uint64_t warnings = 0;
@@ -73,10 +86,11 @@ private:
       fprintf(stderr, "------------------------------------\n");
       fprintf(stderr, "------ MODEL CHECKING REPORT -------\n");
       fprintf(stderr, "    STEPS: %ld\n", (long)steps);
-      fprintf(stderr, "    CREATED machines:   %ld\n", (long)creations);
-      fprintf(stderr, "    DUPLICATE machines: %ld", (long)duplicates);
+      fprintf(stderr, "    created machines to handle non-deterministic machines:   %ld\n", (long)creations);
+      fprintf(stderr, "    hash duplicate detected machines: %ld\n", (long)hash_duplicates);
+      fprintf(stderr, "    hash checks machines: %ld\n", (long)hash_checks);
 
-      double effectiveness = 100 * ((double)duplicates / (double) creations);
+      double effectiveness = 100 * ((double)hash_duplicates / (double) hash_checks);
       fprintf(stderr, "        (hash effectiveness %4.0f %%)\n", effectiveness);
 
       fprintf(stderr, "    WARNINGS: %ld", (long)warnings);
@@ -103,20 +117,28 @@ private:
  public:
   Modelchecker(T* init)
     {
-      todo_stack.push(Todo<T>{init});
+      fprintf(stderr, "------------------  init %p\n", init);
+
+      todo_stack.push(Todo<T>(init));
     }
   
 private:
   bool already_seen_or_add(T* &p)
   {
+    stats.hash_checks++;
+    
     HashEntry<T> entry(p);
     if (hashmap.find(entry) == hashmap.end())
       {
+	T *clone = new T(*p);
+	entry.set(clone);
+	
 	hashmap[entry] = new T(*p);
 	return false;
       }
     else
       {
+	stats.hash_duplicates++;
 	return true;
       }
   }
@@ -140,14 +162,16 @@ private:
   }
 
   bool send_events(T* &p)
-  {
+  {   
     if (! already_seen_or_add(p))
       {
 	//fprintf(stderr, "not already seen!\n");
 	for (auto event : p->getEventVector())
 	  {
 	    stats.creations++;
-	    T* clone(new T(*p));
+	    T* clone = new T(*p);
+	    //fprintf(stderr, "------------------  new %p\n", clone);
+		
 	    clone->do_emit(event);
 	    
 	    todo_stack.push(Todo<T>{clone});
@@ -156,15 +180,14 @@ private:
       }
     else
       {
-	//fprintf(stderr, "already seen!\n");
-	stats.duplicates++;
+	//fprintf(stderr, "already seen!\n");	
 	return false;
       }
   }
 
   void process(Todo<T> &todo)
   {        
-    T* p = todo.data;
+    T* p = todo.get();
 
     bool done = false;
     while (!done)
@@ -203,7 +226,8 @@ private:
 	      }
 	  }
       }
-    //fprintf(stderr, "------------------   trying next one!\n");
+    
+    //fprintf(stderr, "------------------  delete %p\n", p);
     delete p;
   }
   
