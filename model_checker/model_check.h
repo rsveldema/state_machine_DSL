@@ -117,7 +117,7 @@ private:
  public:
   Modelchecker(T* init)
     {
-      fprintf(stderr, "------------------  init %p\n", init);
+      //fprintf(stderr, "------------------  init %p\n", init);
 
       todo_stack.push(Todo<T>(init));
     }

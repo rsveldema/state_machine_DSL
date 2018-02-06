@@ -185,32 +185,24 @@ public:
   class Event
   {
   private:
-    const char *descr;
     EVENT type;
     int64_t payload;
     
   public:
     Event()
-      : descr(0),
-	type(EVENT::EVENT_NONE),
+      : type(EVENT::EVENT_NONE),
 	payload(0)
     {
     }
     
-    Event(const char *_descr, EVENT _type)
-      : descr (_descr),
-	type (_type),
+    Event(EVENT _type)
+      : type (_type),
 	payload(0)
     {
     }
 
-    std::string toString() const {
-      if (descr == NULL) {
-	char buf[16];
-	sprintf(buf, "%d", (int)type);
-	return buf;
-      }
-      return descr;
+    const char *toString() const {
+      return eventToString(type);      
     }
     
     EVENT getType() const { return type; }
@@ -256,6 +248,10 @@ public:
 
     return hashValue;
   }
+
+  std::string eventString() const
+    {
+    }
 
   std::string toString() const
     {

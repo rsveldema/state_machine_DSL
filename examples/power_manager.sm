@@ -1,11 +1,11 @@
 
 machine PowerManager {
 
-  event b1_on  "button 1 pressed";
-  event b1_off "button 1 released";
-  event compute "compute task";
-  event testLowSpeed "test need low CPU speed";
-  event testSuspendToFLASH "test need suspend to flash";
+  event b1_on;
+  event b1_off;
+  event compute;
+  event testLowSpeed;
+  event testSuspendToFLASH;
  
   initial state bootup {
     entry {

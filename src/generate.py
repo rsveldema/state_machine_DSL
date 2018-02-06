@@ -278,11 +278,15 @@ def generate_machine_state_enum(f, state, state_list):
         name = stateName2String(state.stateName())
         write(f, "STATE_" + name + ",");
 
-def generate_machine_event_enum(f, event):
+def generate_machine_event_enum(f, event, genString):
     global event_list;
     if event != None:
-        event_list.append(event)
-        write(f, "EVENT_" + str(event.ID()) + ",");
+        name =  str(event.ID());
+        if not genString:
+            write(f, "case EVENT::EVENT_" + name + ": return \""+name+"\";");
+        else:
+            event_list.append(event)
+            write(f, "EVENT_" + name + ",");
 
         
 def generate_machine_event(f, event, events):
@@ -378,9 +382,9 @@ def generate_states_enum(f, codeRule, state_list):
     for r in codeRule:
         generate_machine_state_enum(f, r.stateRule(), state_list)
 
-def generate_event_enum(f, codeRule):
+def generate_event_enum(f, codeRule, genString):
     for r in codeRule:
-        generate_machine_event_enum(f, r.eventRule())
+        generate_machine_event_enum(f, r.eventRule(), genString)
 
         
 def generate_decls(f, codeRule, hashmethod, compare, equal_compare):
@@ -390,8 +394,7 @@ def generate_decls(f, codeRule, hashmethod, compare, equal_compare):
 def generate_event_ctor_call(h, eventRule, first):
     prefix = ": " if first else ", "
     name = str(eventRule.ID())
-    string = str(eventRule.STRING())
-    write(h, prefix + name + "(" + string + ", EVENT::EVENT_" + name + ")");
+    write(h, prefix + name + "(EVENT::EVENT_" + name + ")");
     
 
 def generate_constructor(h, machineRule):
@@ -471,8 +474,15 @@ class CGeneratorListener(dslListener):
         
         write(self.enums, "enum class EVENT {");
         write(self.enums, "EVENT_NONE,");
-        generate_event_enum(self.enums, ctxt.codeRule())
+        generate_event_enum(self.enums, ctxt.codeRule(), True)
         write(self.enums, "};");
+
+        write(self.enums, "static const char* eventToString(EVENT ev) {");
+        write(self.enums, "   switch (ev) { ");
+        write(self.enums, "   case EVENT::EVENT_NONE: return \"none\"; ");
+        generate_event_enum(self.enums, ctxt.codeRule(), False)
+        write(self.enums, "   }");
+        write(self.enums, "}");
 
         # generate CTOR:
         write(self.h, name + "()");

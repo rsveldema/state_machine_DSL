@@ -1,10 +1,10 @@
 
 machine WaterBoiler {
 
-  event button_on  "button 1 pressed";
-  event button_start  "button 2 pressed";
+  event button_on;
+  event button_start;
 
-  internal event tick "test if glass full";
+  internal event tick;
 
   Stopwatch on_time;
   Boiler boiler;

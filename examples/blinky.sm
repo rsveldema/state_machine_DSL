@@ -1,9 +1,9 @@
 
 machine Blinky {
 
-  event b1 "button 1 pressed";
-  event b2 "button 2 pressed";
-  event blip "blip";
+  event b1;
+  event b2;
+  event blip;
   Led led1;
   Led led2;
  

@@ -17,7 +17,7 @@ codeRule: stateRule | eventRule | declRule;
 
 declRule: ID ID ';';
 
-eventRule: eventModifier* 'event' ID STRING ';' ;
+eventRule: eventModifier* 'event' ID';' ;
 
 eventModifier: op='internal'
 |              op='external'
