@@ -86,7 +86,7 @@ private:
       fprintf(stderr, "------------------------------------\n");
       fprintf(stderr, "------ MODEL CHECKING REPORT -------\n");
       fprintf(stderr, "    STEPS: %ld\n", (long)steps);
-      fprintf(stderr, "    created machines to handle non-deterministic machines:   %ld\n", (long)creations);
+      fprintf(stderr, "    created machines to handle non-deterministic events:   %ld\n", (long)creations);
       fprintf(stderr, "    hash duplicate detected machines: %ld\n", (long)hash_duplicates);
       fprintf(stderr, "    hash checks machines: %ld\n", (long)hash_checks);
 
