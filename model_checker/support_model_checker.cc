@@ -19,8 +19,8 @@ void warp_speed_clock(const ZEP::Utilities::Timeout &timeout)
 {
   uint64_t old = t;
   t = timeout.get().get();
-
-  fprintf(stderr, "-----> time warp from %lld to %lld\n", (long long) old, (long long) t);
+  
+  //fprintf(stderr, "-----> time warp from %lld to %lld\n", (long long) old, (long long) t);
 }
 
 

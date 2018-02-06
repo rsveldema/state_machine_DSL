@@ -171,7 +171,7 @@ private:
       {
 	if (! send_events(p))
 	  {
-	    fprintf(stderr, "failed to send events, machine already seen\n");
+	    //fprintf(stderr, "failed to send events, machine already seen\n");
 	  }
 
 	T temp(*p);
@@ -203,7 +203,7 @@ private:
 	      }
 	  }
       }
-    fprintf(stderr, "------------------   trying next one!\n");
+    //fprintf(stderr, "------------------   trying next one!\n");
     delete p;
   }
   

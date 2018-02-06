@@ -406,13 +406,13 @@ public:
       }
     if (success)
       {
-	fprintf(stderr, "---- erase: %d\n", earliest_index);
+	//fprintf(stderr, "---- erase: %d\n", earliest_index);
 	assert(earliest_index >= 0);
 	delayed_events_stack.erase(earliest_index);
       }
     else
       {
-	fprintf(stderr, "---- failed to retrieve earliest event\n");
+	//fprintf(stderr, "---- failed to retrieve earliest event\n");
       }
     return success;
   }  
