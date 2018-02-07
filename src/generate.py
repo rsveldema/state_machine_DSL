@@ -176,7 +176,7 @@ def generate_eventHandler(f, eventHandlerList):
     for eventHandler in eventHandlerList:
         event_name = str(eventHandler.ID())
         write(f, "void handler_" + event_name + "("+str(currentMachine.ID())+" *self) {");
-        write(f, "SM_TRACE(\"TRIGGER EVENT: " + event_name + "\");");
+        write(f, "SM_TRACE_EVENT(EVENT::EVENT_" + event_name + ");");
         generate_block(f, eventHandler.block());
         write(f, "}");
         
@@ -186,13 +186,15 @@ def generate_entryBlock(f, state, entryBlkList):
     write(f, "void entry("+str(currentMachine.ID())+" *self) {");
     write(f, "memset(this, 0, sizeof(*this));");
     write(f, "self->state = STATES::STATE_" + state_name + ";");
-    write(f, "SM_TRACE(\"ENTER STATE: " + state_name + "\");");
+    write(f, "SM_TRACE_TRANSITION(ENTER, STATES::STATE_" + state_name + ");");
     for entryBlk in entryBlkList:
         generate_block(f, entryBlk.block());
     write(f, "}");
     
 def generate_exitBlock(f, state, exitBlkList):
+    state_name = stateName2String(state.stateName())
     write(f, "void exit("+str(currentMachine.ID())+" *self) {");
+    write(f, "SM_TRACE_TRANSITION(LEAVE, STATES::STATE_" + state_name + ");");
     for exitBlk in exitBlkList:
         generate_block(f, exitBlk.block());
     write(f, "}");

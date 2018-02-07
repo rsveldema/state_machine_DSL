@@ -225,7 +225,8 @@ public:
   delayed_stack_t delayed_events_stack;
 
 #if STATE_MACHINE_SUPPORT_TRACES
-  Trace trace;
+  static const unsigned MAX_TRACE_LEN = 32;
+  Trace<MAX_TRACE_LEN, EVENT, STATES> trace;
 #endif
 
   bool hasPendingEvents() const
@@ -332,7 +333,6 @@ public:
 	bool success = delayed_events_stack.add(delayed_event_t(timeout, event));
 	if (! success)
 	  {
-	    SM_LOG("dropped event\n");
 	    return false;
 	  }
       }
