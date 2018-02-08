@@ -16,6 +16,7 @@
 #include "HashValue.h"
 
 
+
 template<class T, size_t _max_size>
 class delayed_event_queue
 {
@@ -216,18 +217,64 @@ public:
     }
   };
 
+ private:
   static const size_t MAX_EVENTS = 16;
   typedef tiny_vector<Event, MAX_EVENTS> EventVector;
   
   static const size_t MAX_DELAYED_EVENTS = 16;
   typedef delayed_event_queue <Event, MAX_DELAYED_EVENTS> delayed_stack_t;
-  typedef delayed_stack_t::delayed_event_t delayed_event_t;
   delayed_stack_t delayed_events_stack;
 
 #if STATE_MACHINE_SUPPORT_TRACES
   static const unsigned MAX_TRACE_LEN = 32;
-  Trace<MAX_TRACE_LEN, EVENT, STATES> trace;
+  Trace<{{state_machine_name}}, MAX_TRACE_LEN, EVENT, STATES> trace;
 #endif
+
+ public:
+  typedef delayed_stack_t::delayed_event_t delayed_event_t;
+  
+ public:
+  static {{state_machine_name}} *getInstance()
+  {
+    return ({{state_machine_name}} *) get_thread_local_state_machine_ptr();
+  }
+
+  static void setInstance({{state_machine_name}} *instance)
+  {
+    set_thread_local_state_machine_ptr(instance);
+  }
+
+  static const char *state_2_string(STATES s)
+  {
+    switch (s)
+      {
+      case STATES::STATE_NONE: return "NONE?";
+	{{STATE2STR}}
+      }
+    return "unknown state enum entry?";
+  }
+
+ private:
+  static void assertHook()
+  {
+    if ({{state_machine_name}} *sm = getInstance())
+      {
+	fprintf(stderr, "assert failed in state %s", sm->toString().c_str());
+#if STATE_MACHINE_SUPPORT_TRACES
+	sm->trace.dump();
+#endif
+      }
+    else
+      {
+	fprintf(stderr, "no current state machine available...\n");
+      }
+  }
+
+ public:
+  static void addAssertHook()
+  {
+    add_assert_hook(assertHook);
+  }
 
   bool hasPendingEvents() const
   {
@@ -249,10 +296,6 @@ public:
 
     return hashValue;
   }
-
-  std::string eventString() const
-    {
-    }
 
   std::string toString() const
     {

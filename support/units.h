@@ -8,6 +8,7 @@ namespace units
   class micros
   {
   private:
+    // in micro-seconds:
     uint64_t value;
     
   public:
@@ -22,6 +23,13 @@ namespace units
       sprintf(buf, "%d.%d", (int)to_secs(), (int) to_millis() % 1000);
       return buf;
     }
+
+    std::string toMicroString() const
+      {	
+	char buf[32];
+	sprintf(buf, "%ld", (long) value);
+	return buf;
+      }
 
     uint64_t get() const { return value; }
 

@@ -310,6 +310,7 @@ def generate_machine_event_handler(f, event, state_list):
     if event != None:
         eventname = str(event.ID())
         write(f, "void dispatch_" + eventname + "() {");
+        write(f, "setInstance(this);");
         write(f, "switch (state) {");
         write(f, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \""+eventname+"\"); break; }");
         for state in state_list:
@@ -348,7 +349,7 @@ def generate_event_handler(f, codeRule, state_list):
     for r in codeRule:
         generate_machine_event_handler(f, r.eventRule(), state_list)
         
-def generate_states(f, codeRule, state_list, states_compare, equal_states_compare, states_str):
+def generate_states(f, codeRule, state_list, states_compare, equal_states_compare, states_str,enum_states_str):
     for r in codeRule:
         generate_machine_state(f, r.stateRule(), state_list)
         
@@ -360,6 +361,8 @@ def generate_states(f, codeRule, state_list, states_compare, equal_states_compar
 
     for s in state_list:
         name = stateName2String(s.stateName())
+        pretty_name = stateName2PrettyString(s.stateName())
+        
         write(states_compare, "case STATES::STATE_" + name + ": {")
         write(states_compare, "   if (state_union." + name + " < other.state_union." + name + ") {");
         write(states_compare, "       return true;");
@@ -378,6 +381,11 @@ def generate_states(f, codeRule, state_list, states_compare, equal_states_compar
         write(states_str, "   ret += state_union." + name + ".toString();");
         write(states_str, "   break;");
         write(states_str, "}");
+
+        write(enum_states_str, "case STATES::STATE_" + name + ": {")
+        write(enum_states_str, "   return \"" + pretty_name + "\";");
+        write(enum_states_str, "}");
+        
 
 
 def generate_states_enum(f, codeRule, state_list):
@@ -399,17 +407,36 @@ def generate_event_ctor_call(h, eventRule, first):
     write(h, prefix + name + "(EVENT::EVENT_" + name + ")");
     
 
-def generate_constructor(h, machineRule):
+def generate_constructor(h, machineRule, name):
     first = True
+    write(h, name + "()");
     for r in machineRule.codeRule():
         e = r.eventRule()
         if e != None:
             generate_event_ctor_call(h, e, first);
             first = False
+    write(h, "{");
+    write(h, "  setInstance(this);");
+    write(h, "}");
+
+
+def generate_emit_dispatch(h):
+    global event_list;
+    write(h, "void do_emit(const Event &event) {");
+    write(h, "setInstance(this);");
+    write(h, "switch (event.getType()) {");
+    write(h, "default: { STATE_BAD_EVENT_HANDLER(\"none\", \"event\"); break; }");
+    for ev in event_list:
+        eventname = str(ev.ID());
+        write(h, "case EVENT::EVENT_"+eventname+": dispatch_"+eventname+"(); break;");
+    write(h, "}");
+    write(h, "}");
+
 
 class CGeneratorListener(dslListener):
-    def __init__(self, h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str):
-        self.states_str = states_str;
+    def __init__(self, h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str, enum_states_str):
+        self.states_str = states_str
+        self.enum_states_str = enum_states_str
         self.equal_compare = equal_compare
         self.equal_states_compare = equal_states_compare
         self.test = test
@@ -487,9 +514,7 @@ class CGeneratorListener(dslListener):
         write(self.enums, "}");
 
         # generate CTOR:
-        write(self.h, name + "()");
-        generate_constructor(self.h, ctxt);
-        write(self.h, "{}");
+        generate_constructor(self.h, ctxt, name);
 
         generate_events(self.h, ctxt.codeRule(), self.events)
         write(self.h, "");
@@ -497,16 +522,9 @@ class CGeneratorListener(dslListener):
         write(self.h, "");
         generate_decls(self.h, ctxt.codeRule(), self.hashmethod, self.compare, self.equal_compare)
         write(self.h, "");
-        generate_states(self.h, ctxt.codeRule(), state_list, self.states_compare, self.equal_states_compare, self.states_str)
+        generate_states(self.h, ctxt.codeRule(), state_list, self.states_compare, self.equal_states_compare, self.states_str, self.enum_states_str)
 
-        write(self.h, "void do_emit(const Event &event) {");
-        write(self.h, "switch (event.getType()) {");
-        write(self.h, "default: { STATE_BAD_EVENT_HANDLER(\"none\", \"event\"); break; }");
-        for ev in event_list:
-            eventname = str(ev.ID());
-            write(self.h, "case EVENT::EVENT_"+eventname+": dispatch_"+eventname+"(); break;");
-        write(self.h, "}");
-        write(self.h, "}");
+        generate_emit_dispatch(self.h);
         
 
 class DottyGeneratorListener(dslListener):
@@ -595,8 +613,9 @@ def generateC(tree, fileName, baseName):
     states_str = StringStream()
     equal_compare    = StringStream()
     equal_states_compare = StringStream()
-
-    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str)
+    enum_states_str = StringStream()
+    
+    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str, enum_states_str)
     walker  = ParseTreeWalker()
     walker.walk(printer, tree)
 
@@ -620,6 +639,7 @@ def generateC(tree, fileName, baseName):
     names['EQUAL_STATES'] = equal_states_compare.code
     names['EVENT_VEC'] = events.code
     names['STATES_TO_STRING'] = states_str.code
+    names['STATE2STR'] = enum_states_str.code        
     rendered = pystache.Renderer().render(f, names)
     
     h = open("generated_state_machine_"+baseName+".hpp", "w")

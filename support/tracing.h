@@ -13,7 +13,7 @@ enum class TraceEntryType {
 };
 
 
-template<typename event_t, typename state_t>
+template<class machine_t, typename event_t, typename state_t>
 class TraceEntry
 {
  public:
@@ -55,22 +55,29 @@ class TraceEntry
 
   std::string toString()
   {
+    std::string prefix = time.toMicroString() + ":";
     switch (type)
       {
       case TraceEntryType::NONE: break;
-      case TraceEntryType::EVENT: return "event<" + state_2_string(state) + ", " + event_2_string(event) + ">";
-      case TraceEntryType::ENTER: return "enter<" + state_2_string(state) + ">";
-      case TraceEntryType::LEAVE: return "leave<" + state_2_string(state) + ">";
-      }    
+      case TraceEntryType::EVENT:
+	return  prefix + std::string("event<") + machine_t::state_2_string(state) + ", " + machine_t::eventToString(event) + ">";
+	
+      case TraceEntryType::ENTER:
+	return prefix + std::string("enter<") + machine_t::state_2_string(state) + ">";
+	
+      case TraceEntryType::LEAVE:
+	return prefix + std::string("leave<") + machine_t::state_2_string(state) + ">";
+      }
+    return "unknown trace entry type?";
   }
 };
 
 
-template<unsigned SIZE, typename event_t, typename state_t>
+template<class machine_t, unsigned SIZE, typename event_t, typename state_t>
 class Trace
 {
  private:
-  typedef TraceEntry<event_t, state_t> entry_t;
+  typedef TraceEntry<machine_t, event_t, state_t> entry_t;
   
   circular_buffer<entry_t, SIZE> buffer;
   
@@ -108,7 +115,7 @@ public:
 	 i != buffer.end();
 	 i = buffer.next(i))
       {
-	auto &ent = buffer.get(i);
+	auto ent = buffer.get(i);
 	fprintf(stderr, "LOG: %s\n", ent.toString().c_str());
       }
     fprintf(stderr, "-----------[ END TRACE DUMP ]----------\n");

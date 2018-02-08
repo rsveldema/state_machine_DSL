@@ -4,7 +4,7 @@ CXXFLAGS=-c -std=c++11 -g2 -I$(HOME)/CUnitHome/include -DUSE_CUNIT=1 -I. -I../su
 # comment line to conserve memory.
 CXXFLAGS += -DSTATE_MACHINE_SUPPORT_TRACES
 
-CXXFLAGS_MC=$(CXXFLAGS) #-fsanitize=address
+CXXFLAGS_MC=$(CXXFLAGS) -DUSE_MODELCHECK #-fsanitize=address
 LDFLAGS_MC=$(LDFLAGS) #-fsanitize=address
 
 LDFLAGS=$(HOME)/CUnitHome/lib/libcunit.a
@@ -12,7 +12,7 @@ LDFLAGS=$(HOME)/CUnitHome/lib/libcunit.a
 all: test_boiler test_power_manager test_blinky model_check_boiler
 
 model_check_boiler: generated_test_boiler.cc
-	g++ $(CXXFLAGS_MC) model_check_boiler.cc ../model_checker/support_model_checker.cc -DUSE_MODELCHECK
+	g++ $(CXXFLAGS_MC) model_check_boiler.cc ../model_checker/support_model_checker.cc 
 	g++ model_check_boiler.o support_model_checker.o -o model_check_boiler $(LDFLAGS_MC)
 
 generated_test_power_manager.cc: power_manager.sm

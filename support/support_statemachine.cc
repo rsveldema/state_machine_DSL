@@ -1,5 +1,20 @@
 #include "support_statemachine.h"
 
+/** support code for when not using the model checker.
+ * The model checker uses the support file ../model_checker/support_model_checker.cc
+ */
+
+static void *current_ptr;
+
+void set_thread_local_state_machine_ptr(void *ptr)
+{
+  current_ptr = ptr;
+}
+
+void *get_thread_local_state_machine_ptr()
+{
+  return current_ptr;
+}
 
 units::micros currentTimeMicros()
 {

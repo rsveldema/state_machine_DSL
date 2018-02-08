@@ -15,7 +15,9 @@
 
 #if USE_MODELCHECK
 #include <assert.h>
-#define ASSERT(X) assert(X)
+
+void model_check_assert(int line, const char *file, const char *msg);
+#define ASSERT(X) {if (! (X)) { model_check_assert(__LINE__, __FILE__, #X); }}
 #elif USE_CUNIT
 #include "support_cunit.h"
 #else
@@ -63,5 +65,9 @@ void event_loop(const units::micros &us,
 #include "tracing.h"
 
 std::string convertToString(int32_t value);
+
+void add_assert_hook(void (*assertHook)());
+void set_thread_local_state_machine_ptr(void *ptr);
+void *get_thread_local_state_machine_ptr();
 
 #endif

@@ -8,6 +8,36 @@
  */
 
 static uint64_t t = 0;
+static void (*assert_hook)();
+
+static void *current_ptr;
+
+void set_thread_local_state_machine_ptr(void *ptr)
+{
+  current_ptr = ptr;
+}
+
+void *get_thread_local_state_machine_ptr()
+{
+  return current_ptr;
+}
+
+void add_assert_hook(void (*func)())
+{
+  assert_hook = func;
+}
+
+void model_check_assert(int line, const char *file, const char *msg)
+{
+  fprintf(stderr, "%d:%s ASSERT FAILED: assert(%s)\n", line, file, msg);
+  if (assert_hook)
+    {
+      assert_hook();
+    }
+  abort();
+}
+
+
 
 // in the model checker we do not want the actual time used
 units::micros currentTimeMicros()

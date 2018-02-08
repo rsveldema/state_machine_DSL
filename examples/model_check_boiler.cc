@@ -4,6 +4,8 @@
 
 int main(int argc, char **argv)
 {
+  WaterBoiler::addAssertHook();
+  
   WaterBoiler *p = new WaterBoiler();
   
   p->initial_transition(p->state_union.bootup);
