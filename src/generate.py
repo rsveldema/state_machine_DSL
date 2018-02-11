@@ -626,7 +626,6 @@ def generateC(tree, fileName, baseName):
     test.close()
 
 
-    with open(template_path + '/template.generated_code.h') as x: f = x.read()    
     names = {}
     names['base_name'] = baseName
     names['state_machine_name'] = str(currentMachine.ID())
@@ -639,10 +638,17 @@ def generateC(tree, fileName, baseName):
     names['EQUAL_STATES'] = equal_states_compare.code
     names['EVENT_VEC'] = events.code
     names['STATES_TO_STRING'] = states_str.code
-    names['STATE2STR'] = enum_states_str.code        
-    rendered = pystache.Renderer().render(f, names)
+    names['STATE2STR'] = enum_states_str.code
     
+    with open(template_path + '/template.generated_code.h') as x: f = x.read()
     h = open("generated_state_machine_"+baseName+".hpp", "w")
+    rendered = pystache.Renderer().render(f, names)
+    h.write(rendered)
+    h.close()
+
+    with open(template_path + '/model_check.template.cc') as x: f = x.read()
+    h = open("model_check_"+baseName+".cc", "w")
+    rendered = pystache.Renderer().render(f, names)
     h.write(rendered)
     h.close()
 

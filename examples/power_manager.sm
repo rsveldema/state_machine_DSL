@@ -1,20 +1,27 @@
 
 machine PowerManager {
 
-  event b1_on;
-  event b1_off;
-  event compute;
-  event testLowSpeed;
-  event testSuspendToFLASH;
- 
+  event button_on;
+  event button_off;
+  event request_high_compute_performance;
+  
+  internal event testLowSpeed;
+  internal event testSuspendToFLASH;
+
+  PersistentStorage persistent_storage;
+  Environment environment;
+
   initial state bootup {
     entry {
-      if (should_restore_from_FLASH()) {
+      if (persistent_storage.should_restore_from_FLASH()) {
 	transition restoring_from_FLASH;
       } else {
 	transition high_speed;
       }
     }
+
+    event button_on {}
+    event button_off {}	
   }
 
   state low_speed {
@@ -22,28 +29,26 @@ machine PowerManager {
       // set CPU in low-speed
     }
     
-    event b1_on {
-      transition suspending_to_RAM;
-    }
-
-    event compute {
+    event button_on {}
+    event button_off {transition suspending_to_RAM; }
+    event testSuspendToFLASH {}
+    event testLowSpeed  {}
+    event request_high_compute_performance {
       transition high_speed;
     }
   }
 
   state high_speed {
     entry {
-      emit compute;	
+      emit request_high_compute_performance;	
       after secs(1) emit testLowSpeed;
     }
 
-    event testLowSpeed {
-      transition low_speed;
-    }
-    
-    event compute {
-      // do stuff
-    }
+    event testLowSpeed  { transition low_speed; }
+    event button_on     { }
+    event button_off    { transition suspending_to_RAM; }
+    event request_high_compute_performance {}
+    event testSuspendToFLASH {}
   }
 
   // RAM
@@ -56,19 +61,22 @@ machine PowerManager {
   }
 
   state suspended_to_RAM {
-      int FLASH_test_suspend_counter;
+        SuspendToFlashStrategy strategy;
 
  	entry {
-	  FLASH_test_suspend_counter = 0;
+	  strategy.init();
 	  after secs(1) emit testSuspendToFLASH;
 	}
-	
+
+	event testLowSpeed  { }
+	event button_on     { transition restoring_from_RAM; }
+	event button_off    { transition suspending_to_FLASH; }
+        event request_high_compute_performance {}
 	event testSuspendToFLASH {
-	  if (need_wakeup()) {
+	  if (environment.need_wakeup()) {
 	    transition restoring_from_RAM;
 	  } else {
-	    FLASH_test_suspend_counter = FLASH_test_suspend_counter + 1;
-	    if (FLASH_test_suspend_counter == 10) {
+	    if (strategy.shouldSuspendToFLASH()) {
 	      transition suspending_to_FLASH;
 	    } else {
 	      after secs(1) emit testSuspendToFLASH;
@@ -93,14 +101,17 @@ machine PowerManager {
   }
 
   state suspended_to_FLASH {
-    entry {
+    entry {		   
+      persistent_storage.notify_stored_in_FLASH();
       // shutdown CPU
+      transition bootup;
     }
   }
 
   state restoring_from_FLASH {
     entry {
       // do reverse of suspending_to_FLASH
+      persistent_storage.notify_restored_from_FLASH();
       transition high_speed;
     }
   }

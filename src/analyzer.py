@@ -4,6 +4,7 @@ from dslListener import dslListener
 from antlr4 import *
 from cfg import CFG
 
+currentMachine = None
 error_count = 0
 filename = "<file>"
 
@@ -63,7 +64,17 @@ def stateName2PrettyString(stateName):
 
 def stateName2String(stateName):
     return stateName2StrInternal(stateName, "_")
-    
+
+
+def isEventName(eventName):
+    global currentMachine
+    for p in currentMachine.codeRule():
+        event = p.eventRule()
+        if event != None:
+            name = event.ID()
+            if str(name) == eventName:
+                return True;
+    return False
     
 # Transition statements should:
 #     - entry and exit statements should
@@ -71,6 +82,10 @@ def stateName2String(stateName):
 class AnalyzerListener(dslListener):
     def __init__(self):
         self.name = ""
+
+    def enterMachineRule(self, ctxt):
+        global currentMachine
+        currentMachine = ctxt
 
     def enterStateRule(self, ctxt):
         self.name = stateName2String(ctxt.stateName());
@@ -88,7 +103,11 @@ class AnalyzerListener(dslListener):
         check_transition_stmts(cfg)
 
     def enterEventHandler(self, ctxt):
-        cfg = CFG(ctxt.block(), self.name + "-handler-" + str(ctxt.ID()))
+        eventName = str(ctxt.ID())
+        if not isEventName(eventName):
+            error(ctxt, eventName + " is not the name of a declared event")
+            
+        cfg = CFG(ctxt.block(), self.name + "-handler-" + eventName)
         check_transition_stmts(cfg)
 
 

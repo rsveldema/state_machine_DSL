@@ -9,11 +9,21 @@ LDFLAGS_MC=$(LDFLAGS) #-fsanitize=address
 
 LDFLAGS=$(HOME)/CUnitHome/lib/libcunit.a
 
-all: test_boiler test_power_manager test_blinky model_check_boiler
+all: test_boiler test_power_manager test_blinky model_check_boiler model_check_blinky model_check_power_manager
 
 model_check_boiler: generated_test_boiler.cc
 	g++ $(CXXFLAGS_MC) model_check_boiler.cc ../model_checker/support_model_checker.cc 
 	g++ model_check_boiler.o support_model_checker.o -o model_check_boiler $(LDFLAGS_MC)
+
+
+model_check_blinky: generated_test_blinky.cc
+	g++ $(CXXFLAGS_MC) model_check_blinky.cc ../model_checker/support_model_checker.cc 
+	g++ model_check_blinky.o support_model_checker.o -o model_check_blinky $(LDFLAGS_MC)
+
+
+model_check_power_manager: generated_test_power_manager.cc
+	g++ $(CXXFLAGS_MC) model_check_power_manager.cc ../model_checker/support_model_checker.cc 
+	g++ model_check_power_manager.o support_model_checker.o -o model_check_power_manager $(LDFLAGS_MC)
 
 generated_test_power_manager.cc: power_manager.sm
 	@echo "------------ generate code"
@@ -38,8 +48,8 @@ generated_test_boiler.cc: boiler.sm
 
 -include generated_test_blinky.d generated_test_power_manager.d	main_boiler.d support_statemachine.d generated_test_boiler.d	main_blinky.d main_power_manager.d
 
-test_power_manager: generated_test_power_manager.o main_power_manager.o support_statemachine.o support_power_manager.o
-	g++ -o test_power_manager main_power_manager.o generated_test_power_manager.o support_statemachine.o $(LDFLAGS) support_power_manager.o
+test_power_manager: generated_test_power_manager.o main_power_manager.o support_statemachine.o
+	g++ -o test_power_manager main_power_manager.o generated_test_power_manager.o support_statemachine.o $(LDFLAGS)
 
 test_boiler: generated_test_boiler.o main_boiler.o support_statemachine.o
 	g++ -o test_boiler main_boiler.o generated_test_boiler.o support_statemachine.o $(LDFLAGS)
