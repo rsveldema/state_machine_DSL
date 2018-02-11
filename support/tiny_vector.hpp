@@ -2,6 +2,7 @@
 #define TINY_VECTOR__H____
 
 #include <assert.h>
+#include <stdlib.h>
 
 template<typename T, size_t MAX_SIZE>
 class tiny_vector
@@ -16,6 +17,15 @@ class tiny_vector
     {
     }
 
+  T &getRandomElement()
+  {
+    assert(count > 0);
+    int ix = rand() % count;
+    return at(ix);
+  }
+  
+  unsigned size() const { return count; }
+  
   void push_back(const T &e)
   {
     assert(count < MAX_SIZE);
@@ -49,8 +59,11 @@ class tiny_vector
   };
 
   iterator begin() { return {0, this}; }
-
   iterator end() { return {count, this}; }
+  T &at(unsigned ix) {
+    assert(ix < count);
+    return data[ix];
+  }
 };
 
 #endif

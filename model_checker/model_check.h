@@ -4,16 +4,9 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
+#include "../support/stats.h"
 
 void warp_speed_clock(const ZEP::Utilities::Timeout &t);
-
-
-
-template<typename T, typename K>
-bool contains(const T &l, const K &k)
-{
-  return std::find(l.begin(), l.end(), k) != l.end();
-}
 
 
 template<class T>
@@ -69,23 +62,23 @@ template<class T>
 class Modelchecker
 {
 private:
+  const bool use_statistical_analysis;
+  const unsigned max_step_count_per_machine;
   std::map<HashEntry<T>, T*> hashmap;
   std::stack<Todo<T>> todo_stack;
 
-  struct Statictics {
+  struct Statictics : public CheckerStatistics {
     uint64_t creations = 0;
     uint64_t hash_duplicates = 0;
     uint64_t hash_checks = 0;
-    uint64_t steps = 0;
-    
-    uint64_t warnings = 0;
-    std::vector<std::string> logged_warnings;
-    
+        
     void dump()
     {
       fprintf(stderr, "------------------------------------\n");
       fprintf(stderr, "------ MODEL CHECKING REPORT -------\n");
-      fprintf(stderr, "    STEPS: %ld\n", (long)steps);
+      fprintf(stderr, "    STEPS: %ld  (max sequence len: %ld)\n",
+	      (long)steps,
+	      (long)max_step_count);
       fprintf(stderr, "    created machines to handle non-deterministic events:   %ld\n", (long)creations);
       fprintf(stderr, "    hash duplicate detected machines: %ld\n", (long)hash_duplicates);
       fprintf(stderr, "    hash checks machines: %ld\n", (long)hash_checks);
@@ -100,22 +93,15 @@ private:
 	}
       fprintf(stderr, "------------------------------------\n");
     }
-
-
-    void warn(const std::string &msg)
-    {
-      fprintf(stderr, "WARNING: %s\n", msg.c_str());
-
-      if (! contains(logged_warnings, msg))
-	{
-	  logged_warnings.push_back(msg);
-	}
-    }
     
   } stats;
 
  public:
-  Modelchecker(T* init)
+ Modelchecker(T* init,
+	      bool _use_statistical_analysis,
+	      unsigned _max_step_count_per_machine)
+   : use_statistical_analysis(_use_statistical_analysis),
+    max_step_count_per_machine(_max_step_count_per_machine)
     {
       //fprintf(stderr, "------------------  init %p\n", init);
 
@@ -161,32 +147,60 @@ private:
       }
   }
 
-  void send_events(T* &p)
-  {   
-    for (auto event : p->getEventVector())
+  void send_event(T *p, typename T::Event &event)
+  {
+    stats.creations++;
+    T* clone = new T(*p);
+    //fprintf(stderr, "------------------  new %p\n", clone);    
+    clone->do_emit(event);    
+    todo_stack.push(Todo<T>{clone});
+  }
+  
+
+  void send_events(T *p)
+  {
+    if (use_statistical_analysis)
       {
-	stats.creations++;
-	T* clone = new T(*p);
-	//fprintf(stderr, "------------------  new %p\n", clone);
-	
-	clone->do_emit(event);
-	
-	todo_stack.push(Todo<T>{clone});
+	send_event(p, p->getEventVector().getRandomElement());
+      }
+    else
+      {
+	for (auto event : p->getEventVector())
+	  {
+	    send_event(p, event);
+	  }
       }
   }
 
+  /** process one element from the to-do stack
+   */
   void process(Todo<T> &todo)
   {        
     T* p = todo.get();
-
+    
+    volatile unsigned step_count = 0;
     while (1)
       {
+	step_count++;
+	stats.record_max_step_count(step_count);
+	if (step_count > max_step_count_per_machine)
+	  {
+	    fprintf(stderr, "max step count reached for this machine, assuming all okay...\n");
+	    break;
+	  }
+	
+	// if we've already seen this state somehow, then
+	// there is no need to continue searching for states following
+	// this one.
 	if (already_seen_or_add(p))
 	  {
 	    break;
-	  }	  
+	  }
+
+	// send possible external events to the machine.
 	send_events(p);
 
+	// see if we can execute a step
 	T temp(*p);
 	if (! step(p))
 	  {
@@ -194,7 +208,10 @@ private:
 	    break;
 	  }
 	
-	// there are pending events.	
+	// There are pending events for this instance.
+	// Now lets process one of the events and see
+	// if that changes the MC state of the machine.
+	// If no change is made, we can ignore this and any following MC states.
 	stats.steps++;
 	if (temp.equals(*p, false))
 	  {

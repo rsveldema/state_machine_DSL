@@ -227,6 +227,7 @@ public:
 
 #if STATE_MACHINE_SUPPORT_TRACES
   static const unsigned MAX_TRACE_LEN = 32;
+ public:
   Trace<{{state_machine_name}}, MAX_TRACE_LEN, EVENT, STATES> trace;
 #endif
 
