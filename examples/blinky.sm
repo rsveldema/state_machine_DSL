@@ -27,7 +27,7 @@ machine Blinky {
     }
     
     event b1 {
-      printf("ignoring button1 press, already in b2\n");
+      printf("ignoring button1 press, already in b1\n");
     }
     
     event b2 {

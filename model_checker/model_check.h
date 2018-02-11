@@ -161,27 +161,17 @@ private:
       }
   }
 
-  bool send_events(T* &p)
+  void send_events(T* &p)
   {   
-    if (! already_seen_or_add(p))
+    for (auto event : p->getEventVector())
       {
-	//fprintf(stderr, "not already seen!\n");
-	for (auto event : p->getEventVector())
-	  {
-	    stats.creations++;
-	    T* clone = new T(*p);
-	    //fprintf(stderr, "------------------  new %p\n", clone);
-		
-	    clone->do_emit(event);
-	    
-	    todo_stack.push(Todo<T>{clone});
-	  }
-	return true;
-      }
-    else
-      {
-	//fprintf(stderr, "already seen!\n");	
-	return false;
+	stats.creations++;
+	T* clone = new T(*p);
+	//fprintf(stderr, "------------------  new %p\n", clone);
+	
+	clone->do_emit(event);
+	
+	todo_stack.push(Todo<T>{clone});
       }
   }
 
@@ -189,41 +179,42 @@ private:
   {        
     T* p = todo.get();
 
-    bool done = false;
-    while (!done)
+    while (1)
       {
-	if (! send_events(p))
+	if (already_seen_or_add(p))
 	  {
-	    //fprintf(stderr, "failed to send events, machine already seen\n");
-	  }
+	    break;
+	  }	  
+	send_events(p);
 
 	T temp(*p);
 	if (! step(p))
 	  {
-	    //fprintf(stderr, "XXXXXX  no pending events\n");
-	    done = true;
+	    fprintf(stderr, "XXXXXX  no pending events\n");
+	    break;
+	  }
+	
+	// there are pending events.	
+	stats.steps++;
+	if (temp.equals(*p, false))
+	  {
+	    fprintf(stderr, "XXXXXX  pending event and machine unequal after step\n");
+	    break;
+	  }
+	else if (temp.equals(*p, true))
+	  {
+	    std::string msg("the only difference after state comparison is a deadline change due to a re-submitted command.\n");
+	    msg += "\t\tBEFORE: " + temp.toString() + "\n";
+	    msg += "\t\tAFTER:  " + p->toString() + "\n";
+	    stats.warn(msg);
+	    break;
 	  }
 	else
 	  {
-	    stats.steps++;
-	    if (temp.equals(*p, false))
-	      {
-		done = true;
-	      }
-	    else if (temp.equals(*p, true))
-	      {
-		std::string msg("the only difference after state comparison is a deadline change due to a re-submitted command.\n");
-		msg += "\t\tBEFORE: " + temp.toString() + "\n";
-		msg += "\t\tAFTER:  " + p->toString() + "\n";
-
-		
-		stats.warn(msg);
-		done = true;
-	      }
-	    else
-	      {
-		//fprintf(stderr, "XXXXXXX state machine is different after stepping?\n");
-	      }
+	    /*
+	    fprintf(stderr,
+		    "XXXXXXX state machine is different after stepping?\n");
+	    */
 	  }
       }
     

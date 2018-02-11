@@ -25,7 +25,6 @@ machine WaterBoiler {
     event button_start
     {
         // ignore event
-	assert false;
     }
 
     event button_on
