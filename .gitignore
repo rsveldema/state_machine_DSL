@@ -12,3 +12,6 @@ model_check_boiler
 *.tokens
 generated_*
 *~
+model_check_blinky
+model_check_power_manager
+*#
