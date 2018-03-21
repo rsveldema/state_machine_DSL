@@ -7,7 +7,7 @@ CXXFLAGS += -DSTATE_MACHINE_SUPPORT_TRACES
 CXXFLAGS_MC=$(CXXFLAGS) -DUSE_MODELCHECK #-fsanitize=address
 LDFLAGS_MC=$(LDFLAGS) #-fsanitize=address
 
-LDFLAGS=$(HOME)/CUnitHome/lib/libcunit.a
+LDFLAGS=-L$(HOME)/CUnitHome/lib/ -lcunit
 
 all: test_boiler test_power_manager test_blinky model_check_boiler model_check_blinky model_check_power_manager
 
