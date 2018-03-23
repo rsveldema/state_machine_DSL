@@ -18,6 +18,10 @@ def write(f, s):
 def writeMethod(self, str):
     self.code += str;
 
+def generate_unary(f, e):
+    write(f, str(e.op.text));
+    generate_expr(f, e.expr())
+    
 def generate_paren(f, e):
     write(f, "(");
     generate_expr(f, e.expr())
@@ -57,7 +61,9 @@ def generate_time(f, t):
         
 def generate_expr(f, e):
     #expr: paren_expr | bin_expr | time_expr | NUMBER | STRING;
-    if e.paren_expr() != None:
+    if e.unary() != None:
+        generate_unary(f, e.unary())
+    elif e.paren_expr() != None:
         generate_paren(f, e.paren_expr());
     elif e.bin_expr() != None:
         generate_bin(f, e.bin_expr());
@@ -107,6 +113,15 @@ def generate_lhs(f, lhs):
         generate_arg_list(f, lhs.arg_list())
 
 
+def generate_auto(f, s):
+    f.write("auto ");
+    lhs = s.lhs()
+    rhs = s.expr();
+    generate_lhs(f, lhs)
+    f.write(" = ");
+    generate_expr(f, rhs)
+    f.write(";\n")
+    
         
 def generate_expr_stmt(f, s):
     f.write("");
@@ -161,6 +176,8 @@ def generate_stmt(f, s):
         generate_wait(f, s.wait_stmt());
     elif s.after_stmt() != None:
         generate_after(f, s.after_stmt());
+    elif s.auto_stmt() != None:
+        generate_auto(f, s.auto_stmt());
     else:
         print("---> don't know how to handle this statement");
         assert False;
@@ -310,7 +327,9 @@ def generate_machine_event_handler(f, event, state_list):
     if event != None:
         eventname = str(event.ID())
         write(f, "void dispatch_" + eventname + "() {");
+        write(f, "#if SUPPORT_MODEL_CHECKING");
         write(f, "setInstance(this);");
+        write(f, "#endif");
         write(f, "switch (state) {");
         write(f, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \""+eventname+"\"); break; }");
         for state in state_list:
@@ -330,7 +349,10 @@ def generate_machine_event_handler(f, event, state_list):
 def generate_machine_decl(f, decl, hashmethod, compare, equal_compare):
     if decl != None:
         names = decl.ID()
-        write(f, str(names[0]) + " " + str(names[1]) + ";")
+        op = ""
+        if decl.modifier != None:
+            op += decl.modifier.text
+        write(f, str(names[0]) + " " + op + " " + str(names[1]) + ";")
 
         if compare != None:
             write(compare, "if (" + str(names[1]) + " < other." + str(names[1])+  ") return true;");
@@ -416,14 +438,18 @@ def generate_constructor(h, machineRule, name):
             generate_event_ctor_call(h, e, first);
             first = False
     write(h, "{");
+    write(h, "#if SUPPORT_MODEL_CHECKING");
     write(h, "  setInstance(this);");
+    write(h, "#endif");
     write(h, "}");
 
 
 def generate_emit_dispatch(h):
     global event_list;
     write(h, "void do_emit(const Event &event) {");
+    write(h, "#if SUPPORT_MODEL_CHECKING");
     write(h, "setInstance(this);");
+    write(h, "#endif");
     write(h, "switch (event.getType()) {");
     write(h, "default: { STATE_BAD_EVENT_HANDLER(\"none\", \"event\"); break; }");
     for ev in event_list:

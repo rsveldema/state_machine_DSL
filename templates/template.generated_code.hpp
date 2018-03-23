@@ -8,174 +8,18 @@
 #ifndef __GENERATED_HEADER__H__
 #define __GENERATED_HEADER__H__
 
-
+#if SUPPORT_DELAYED_EVENTS
 #include "builtins_statemachine.h"
 #include "support_{{base_name}}.h"
-#include "tiny_vector.hpp"
-#include <string>
+#endif
+
+#if SUPPORT_MODEL_CHECKING
 #include "HashValue.h"
+#endif
 
-
-
-template<class T, size_t _max_size>
-class delayed_event_queue
-{
- public:
-  typedef std::pair <ZEP::Utilities::Timeout, T> delayed_event_t;
-
- private:
-  size_t count;
-  bool valid[_max_size];
-  delayed_event_t elts[_max_size];
-
- public:
-  delayed_event_queue()
-    {
-      count = 0;
-      memset(valid, 0, sizeof(valid));
-    }
-
-  bool empty() const
-  {
-    return size() == 0;
-  }
-
-  HashValue getHash() const
-  {
-    HashValue hash(count);
-    for (unsigned i = 0; i < count; i++)
-      {
-	hash.add(elts[i].second.getHash());
-      }
-    return hash;
-  }
-
-  bool equals(const delayed_event_queue &other, bool ignore_deadline) const
-  {
-    if (count != other.count)
-      {
-	return false;
-      }
-
-    for (unsigned i = 0; i < _max_size; i++)
-      {
-	if (valid[i] != other.valid[i])
-	  {
-	    return false;
-	  }
-	
-	if (valid[i])
-	  {
-	    if (! ignore_deadline)
-	      {
-		if (elts[i].first != other.elts[i].first)
-		  {
-		    return false;
-		  }
-	      }
-	    if (elts[i].second != other.elts[i].second)
-	      {
-		return false;
-	      }
-	  }
-      }
-    return true;
-  }
-
-  std::string toString() const
-    {
-      std::string ret("delayed<");
-      for (unsigned i=0;i<count;i++)
-	{
-	  if (valid[i])
-	    {
-	      ret += "(";
-	      ret += elts[i].first.toString();
-	      ret += ", ";
-	      ret += elts[i].second.toString();
-	      ret += ")";
-	    }
-	}
-      ret += ">";
-      return ret;
-    }
-  
-  bool operator < (const delayed_event_queue &other) const
-  {
-    if (count < other.count)
-      {
-	return true;
-      }
-    if (count == other.count)
-      {
-	for (unsigned i = 0; i < count; i++)
-	  {
-	    if (! valid[i] && other.valid[i])
-	      {
-		return true;
-	      }
-	    else if (valid[i] && ! other.valid[i])
-	      {
-		return false;
-	      }
-	    else if (valid[i] && other.valid[i])
-	      {
-		const T &e1 = get(i).second;
-		const T &e2 = other.get(i).second;
-		
-		if (e1.getHash() < e2.getHash())
-		  {
-		    return true;
-		  }
-	      }
-	  }
-      }
-    return false;
-  }
-
-  size_t max_size() const { return _max_size; }
-  size_t size() const     { return count; }
-  
-  bool is_valid(size_t i) const
-  {
-    ASSERT(i < _max_size);
-    ASSERT(count >= 0);
-    return valid[i];
-  }
-
-  const delayed_event_t &get(size_t i) const
-  {
-    ASSERT(i < _max_size);
-    ASSERT(valid[i]);
-    ASSERT(count > 0);
-    return elts[i];
-  }
-
-  void erase(size_t i)
-  {    
-    ASSERT(i < _max_size);
-    ASSERT(valid[i]);
-    ASSERT(count > 0);
-        
-    valid[i] = false;
-    count--;
-  }
-
-  bool add(const delayed_event_t &elt)
-  {
-    for (size_t i = 0; i < _max_size; i++)
-      {
-	if (! valid[i])
-	  {
-	    count++;
-	    valid[i] = true;
-	    elts[i] = elt;
-	    return true;
-	  }	   
-      }
-    return false;
-  }
-};
+#if SUPPORT_DELAYED_EVENTS
+#include "event_queue.h"
+#endif
 
 
 class {{state_machine_name}}
@@ -208,9 +52,11 @@ public:
     
     EVENT getType() const { return type; }
     int64_t getPayload() const { return payload; }
-    
-    HashValue getHash() const { return payload | (uint64_t) type; }
 
+#if SUPPORT_MODEL_CHECKING
+    HashValue getHash() const { return payload | (uint64_t) type; }
+#endif
+    
     bool operator != (const Event &ev) const
     {
       return type != ev.type || payload != ev.payload;
@@ -218,12 +64,17 @@ public:
   };
 
  private:
+
+#if SUPPORT_DELAYED_EVENTS
   static const size_t MAX_EVENTS = 16;
-  typedef tiny_vector<Event, MAX_EVENTS> EventVector;
-  
+  typedef tiny_vector<Event, MAX_EVENTS> EventVector;  
   static const size_t MAX_DELAYED_EVENTS = 16;
   typedef delayed_event_queue <Event, MAX_DELAYED_EVENTS> delayed_stack_t;
   delayed_stack_t delayed_events_stack;
+ public:
+  typedef delayed_stack_t::delayed_event_t delayed_event_t;
+
+#endif
 
 #if STATE_MACHINE_SUPPORT_TRACES
   static const unsigned MAX_TRACE_LEN = 32;
@@ -231,9 +82,8 @@ public:
   Trace<{{state_machine_name}}, MAX_TRACE_LEN, EVENT, STATES> trace;
 #endif
 
- public:
-  typedef delayed_stack_t::delayed_event_t delayed_event_t;
   
+#if SUPPORT_MODEL_CHECKING
  public:
   static {{state_machine_name}} *getInstance()
   {
@@ -244,7 +94,8 @@ public:
   {
     set_thread_local_state_machine_ptr(instance);
   }
-
+#endif
+  
   static const char *state_2_string(STATES s)
   {
     switch (s)
@@ -256,6 +107,7 @@ public:
   }
 
  private:
+#if SUPPORT_MODEL_CHECKING
   static void assertHook()
   {
     if ({{state_machine_name}} *sm = getInstance())
@@ -276,19 +128,7 @@ public:
   {
     add_assert_hook(assertHook);
   }
-
-  bool hasPendingEvents() const
-  {
-    return ! delayed_events_stack.empty();
-  }
   
-  EventVector getEventVector()
-  {
-    EventVector vec;
-    {{EVENT_VEC}}
-    return vec;
-  }
-
   HashValue getHash() const {
     HashValue hashValue = delayed_events_stack.getHash();
     hashValue.add((uint64_t)state << 20);
@@ -297,7 +137,7 @@ public:
 
     return hashValue;
   }
-
+  
   std::string toString() const
     {
       std::string ret("{{state_machine_name}}<");
@@ -316,6 +156,7 @@ public:
       
       return ret;
     }
+  
 
   bool operator == (const {{state_machine_name}} &other) const
   {
@@ -323,7 +164,7 @@ public:
     return equals(other, true);
   }
   
-  bool equals (const {{state_machine_name}} &other, bool ignore_deadline) const
+  bool equals(const {{state_machine_name}} &other, bool ignore_deadline) const
   {
     {{EQUAL_FIELDS}}
 
@@ -362,10 +203,28 @@ public:
       }
     return false;
   }
+#endif
   
-  {{MAIN_CODE}}
 
+#if SUPPORT_DELAYED_EVENTS
+  bool hasPendingEvents() const
+  {
+    return ! delayed_events_stack.empty();
+  }
   
+  EventVector getEventVector()
+  {
+    EventVector vec;
+    {{EVENT_VEC}}
+    return vec;
+  }
+#endif
+
+
+ public:
+  {{MAIN_DECLS}}
+
+#if SUPPORT_DELAYED_EVENTS  
   bool emit (const Event &event, const ZEP::Utilities::Timeout &timeout)
   {
     if (timeout.hasElapsed ())
@@ -406,13 +265,7 @@ public:
       }
     return success;
   }
-
-  void emit(const Event &event)
-  {
-    process_delayed_events();
-    do_emit(event);
-  }
-
+  
   bool removeEarliestDeadlineEvent(delayed_event_t &found_de)
   {
     ZEP::Utilities::Timeout earliest_time;
@@ -456,6 +309,16 @@ public:
       }
     return success;
   }  
+#endif
+
+  void emit(const Event &event)
+  {
+#if SUPPORT_DELAYED_EVENTS
+    process_delayed_events();
+#endif
+    do_emit(event);
+  }
+
 };
 
 void registerTests_{{base_name}} ();

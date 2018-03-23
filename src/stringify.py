@@ -60,3 +60,7 @@ def expr_stmt2str(s):
         return lhs2str(s.lhs());
     else:
         return lhs2str(s.lhs()) + s.op.text + expr2str(s.expr())
+
+
+def auto_stmt2str(s):
+    return "auto " + lhs2str(s.lhs()) + " = " + expr2str(s.expr())

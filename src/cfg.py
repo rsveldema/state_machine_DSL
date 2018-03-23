@@ -81,6 +81,10 @@ def cfg_expr_stmt(s, prev_list):
     start = Node(s, expr_stmt2str(s), prev_list)    
     return start;
 
+def cfg_auto_stmt(s, prev_list):    
+    start = Node(s, auto_stmt2str(s), prev_list)    
+    return start;
+
 def cfg_emit(s, prev_list):
     start = Node(s, "emit", prev_list)    
     return start;
@@ -109,6 +113,8 @@ def cfg_stmt(s, prev_list):
         cfg_while(s.while_stmt(), prev_list);
     elif s.expr_stmt() != None:
         cfg_expr_stmt(s.expr_stmt(), prev_list);
+    elif s.auto_stmt() != None:
+        cfg_auto_stmt(s.auto_stmt(), prev_list);
     elif s.transitionStatement() != None:
         cfg_transition(s.transitionStatement(), prev_list);
     elif s.block() != None:

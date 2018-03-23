@@ -15,7 +15,11 @@ machineRule: 'machine' ID '{' codeRule*  '}';
 codeRule: stateRule | eventRule | declRule;
 
 
-declRule: ID ID ';';
+declRule: ID ( modifier='*'
+	     | modifier='&'
+	     )?
+	  ID ';'
+	  ;
 
 eventRule: eventModifier* 'event' ID';' ;
 
@@ -44,7 +48,8 @@ statement: if_stmt
     | emit_stmt
     | after_stmt
     | assert_stmt
-    | wait_stmt	
+    | wait_stmt
+    | auto_stmt ';'
     ;
 
 wait_stmt: 'wait' time_expr ';';
@@ -63,6 +68,8 @@ if_stmt:
 transitionStatement: 'transition' stateName ';';
 
 block: '{' statement* '}';
+
+auto_stmt: 'auto' lhs '=' expr;
 
 expr_stmt: lhs
         ( op='=' expr
@@ -86,7 +93,11 @@ selector:  op='.'  ID
 |          op='::' ID
 ;
 
-expr: paren_expr | bin_expr | time_expr | NUMBER | STRING;
+expr: paren_expr | bin_expr | time_expr | NUMBER | STRING | unary;
+
+unary: op='!' expr
+|      op='~' expr
+;
 
 time_expr: unit='secs' '(' expr ')'
 |          unit='millis' '(' expr ')'
@@ -115,7 +126,7 @@ paren_expr: '(' expr ')';
 STRING: '"' STRCHAR*? '"';
 fragment STRCHAR:[ ,?!a-zA-Z0-9_/.\\<>\-:;];
 
-ID: [a-zA-Z][_a-zA-Z0-9]*;
+ID: [_a-zA-Z][_a-zA-Z0-9]*;
 
 NUMBER: [0-9]+ ('.' [0-9]+)?;
 
