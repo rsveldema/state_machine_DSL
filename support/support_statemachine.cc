@@ -1,4 +1,4 @@
-#include "support_statemachine.h"
+#include "support_statemachine.hpp"
 
 /** support code for when not using the model checker.
  * The model checker uses the support file ../model_checker/support_model_checker.cc

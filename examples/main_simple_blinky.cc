@@ -9,10 +9,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "builtins_statemachine.h"
-#include "support_statemachine.h"
+#include "builtins_statemachine.hpp"
+#include "support_statemachine.hpp"
 
-#include "generated_state_machine_boiler.hpp"
+#include "generated_state_machine_simple_blinky.hpp"
 
 
 int main(int argc, char **argv)
@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     abort();
   }
   
-  registerTests_boiler();
+  registerTests_simple_blinky();
   printf("run tests!\n");
   
   /* Run all tests using the CUnit Basic interface */

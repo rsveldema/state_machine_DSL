@@ -11,7 +11,7 @@
 #include <utility>
 #include <string>
 
-#include "units.h"
+#include "units.hpp"
 
 #if USE_MODELCHECK
 #include <assert.h>
@@ -19,7 +19,7 @@
 void model_check_assert(int line, const char *file, const char *msg);
 #define ASSERT(X) {if (! (X)) { model_check_assert(__LINE__, __FILE__, #X); }}
 #elif USE_CUNIT
-#include "support_cunit.h"
+#include "support_cunit.hpp"
 #else
 #warning "UNHANDLED TEST SUITE"
 #include <assert.h>
@@ -62,7 +62,7 @@ void event_loop(const units::micros &us,
 }
 
 
-#include "tracing.h"
+#include "tracing.hpp"
 
 std::string convertToString(int32_t value);
 

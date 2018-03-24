@@ -5,8 +5,7 @@
 #include <assert.h>
 #include <string>
 
-#include "HashValue.h"
-
+#include "HashValue.hpp"
 
 
 #endif

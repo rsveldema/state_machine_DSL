@@ -189,64 +189,44 @@ def generate_block(f, blk):
     write(f, "}");
     
 
-def generate_eventHandler(f, eventHandlerList):
+def generate_eventHandler(f, c, name, machine_name, state, eventHandlerList):
     for eventHandler in eventHandlerList:
         event_name = str(eventHandler.ID())
-        write(f, "void handler_" + event_name + "("+str(currentMachine.ID())+" *self) {");
-        write(f, "SM_TRACE_EVENT(EVENT::EVENT_" + event_name + ");");
-        generate_block(f, eventHandler.block());
-        write(f, "}");
+        write(f, "void handler_" + event_name + "("+str(currentMachine.ID())+" *self);");
+        write(c, "void  "+machine_name+"::TYPE_"+name+"::handler_" + event_name + "("+str(currentMachine.ID())+" *self) {");
+        generate_block(c, eventHandler.block());
+        write(c, "}");
         
 
-def generate_entryBlock(f, state, entryBlkList):
+def generate_entryBlock(f, c, name, machine_name, state, entryBlkList):
     state_name = stateName2String(state.stateName())
-    write(f, "void entry("+str(currentMachine.ID())+" *self) {");
-    write(f, "memset(this, 0, sizeof(*this));");
-    write(f, "self->state = STATES::STATE_" + state_name + ";");
-    write(f, "SM_TRACE_TRANSITION(ENTER, STATES::STATE_" + state_name + ");");
+    write(f, "void entry("+str(currentMachine.ID())+" *self);");
+    write(c, "void  "+machine_name + "::TYPE_" + name+"::entry("+str(currentMachine.ID())+" *self) {");
+    write(c, "memset(this, 0, sizeof(*this));");
+    write(c, "self->state = STATES::STATE_" + state_name + ";");
     for entryBlk in entryBlkList:
-        generate_block(f, entryBlk.block());
-    write(f, "}");
+        generate_block(c, entryBlk.block());
+    write(c, "}");
     
-def generate_exitBlock(f, state, exitBlkList):
+def generate_exitBlock(f, c, name, machine_name, state, exitBlkList):
     state_name = stateName2String(state.stateName())
-    write(f, "void exit("+str(currentMachine.ID())+" *self) {");
-    write(f, "SM_TRACE_TRANSITION(LEAVE, STATES::STATE_" + state_name + ");");
+    write(f, "void exit("+str(currentMachine.ID())+" *self);");
+    write(c, "void  "+machine_name + "::TYPE_" +name+"::exit("+str(currentMachine.ID())+" *self) {");
     for exitBlk in exitBlkList:
-        generate_block(f, exitBlk.block());
-    write(f, "}");
+        generate_block(c, exitBlk.block());
+    write(c, "}");
 
-def generate_declsBlock(f, state, decls):
+def generate_declsBlock(f, c, name, machine_name, state, decls):
+    f.write("std::tuple<");
+    index = 0
     for d in decls:
-        generate_machine_decl(f, d, None, None, None)
+        generate_machine_decl(f, c, d, index)
+    write(f, "> fields;");
 
-    name = stateName2String(state.stateName())
-    write(f, "bool operator < (const TYPE_" + name + " &other) const {");
-    for d in decls:
-        decl_name = str(d.ID()[1])
-        write(f, "if (" + decl_name + " < other." + decl_name + ") {");
-        #write(f, "   LOG_DEBUG(\" \");");
-        write(f, "   return true;");
-        write(f, "}");
-    write(f, "return false;");
-    write(f, "}");
-
-    write(f, "bool operator == (const TYPE_" + name + " &other) const {");
-    for d in decls:
-        decl_name = str(d.ID()[1])
-        write(f, "if (" + decl_name + " != other." + decl_name + ") {");
-        write(f, "   return false;");
-        write(f, "}");
-    write(f, "return true;");
-    write(f, "}");
-
-    write(f, "std::string toString () const {");
-    write(f, "std::string ret(\"STATE:" + name + "\");");
-    for d in decls:
-        decl_name = str(d.ID()[1])
-        write(f, "ret += \"," + decl_name + "=\" + convertToString(" + decl_name + ");");
-    write(f, "return ret;");
-    write(f, "}");
+    index = 0
+    for r in decls:
+        generate_machine_decl_access(f, c, d, index)
+        index += 1
 
 
 def isInitialState(modlist):
@@ -254,41 +234,44 @@ def isInitialState(modlist):
         return True
     return False
 
-def generate_machine_state(f, state, state_list):
+def generate_machine_state(f, c, machine_name, state, state_list):
     if state != None:
         name = stateName2String(state.stateName())
-        
+
+        # generate the class for this state:
         write(f, "class TYPE_" + name + " {");
         write(f, "public:");
-        generate_eventHandler(f, state.eventHandler());
-        generate_entryBlock(f, state, state.entryBlock());
-        generate_declsBlock(f, state, state.declRule());
-        generate_exitBlock(f, state, state.exitBlock());
+        generate_eventHandler(f, c, name, machine_name, state, state.eventHandler());
+        generate_entryBlock(f, c, name, machine_name, state, state.entryBlock());
+        generate_declsBlock(f, c, name, machine_name, state, state.declRule());
+        generate_exitBlock(f, c, name, machine_name, state, state.exitBlock());
         write(f, "};");
 
-        write(f, "void transition(const TYPE_"+name+" &) {");
-        write(f, "switch (state) {");
-        write(f, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \"state\"); break; }");
-        write(f, "case STATES::STATE_NONE: break;");
+        write(f, "void transition(const TYPE_"+name+" &);");
+        write(c, "void "+machine_name+"::transition(const TYPE_"+name+" &) {");
+        write(c, "switch (state) {");
+        write(c, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \"state\"); break; }");
+        write(c, "case STATES::STATE_NONE: break;");
         for state in state_list:
             state_name = stateName2String(state.stateName())
-            write(f, "case STATES::STATE_" + state_name + ": state_union."+state_name+".exit(this); break;");
-        write(f, "}");
-        write(f, "state_union." + name + ".entry(this);");
-        write(f, "}");
+            write(c, "case STATES::STATE_" + state_name + ": state_union."+state_name+".exit(this); break;");
+        write(c, "}");
+        write(c, "state_union." + name + ".entry(this);");
+        write(c, "}");
 
         print("initial state["+name+"]: " + str(state.stateModifier()))
         if True: #isInitialState(state.stateModifier()):
-            write(f, "void initial_transition(const TYPE_"+name+" &) {");
-            write(f, "switch (state) {");
-            write(f, "default: break; ");
-            write(f, "case STATES::STATE_NONE: break;");
+            write(f, "void initial_transition(const TYPE_"+name+" &);");
+            write(c, "void "+machine_name+"::initial_transition(const TYPE_"+name+" &) {");
+            write(c, "switch (state) {");
+            write(c, "default: break; ");
+            write(c, "case STATES::STATE_NONE: break;");
             for state in state_list:
                 state_name = stateName2String(state.stateName())
-                write(f, "case STATES::STATE_" + state_name + ": state_union."+state_name+".exit(this); break;");
-            write(f, "}");
-            write(f, "state_union." + name + ".entry(this);");
-            write(f, "}");
+                write(c, "case STATES::STATE_" + state_name + ": state_union."+state_name+".exit(this); break;");
+            write(c, "}");
+            write(c, "state_union." + name + ".entry(this);");
+            write(c, "}");
                         
 
 def generate_machine_state_enum(f, state, state_list):
@@ -308,7 +291,7 @@ def generate_machine_event_enum(f, event, genString):
             write(f, "EVENT_" + name + ",");
 
         
-def generate_machine_event(f, event, events):
+def generate_machine_event(f, c, event, events):
     if event != None:
         name = str(event.ID())
         write(f, "Event " + name + ";");
@@ -323,57 +306,58 @@ def hasEventHandler(state, eventname):
             return True
     return False
 
-def generate_machine_event_handler(f, event, state_list):
+def generate_machine_event_handler(f, c, machinename, event, state_list):
     if event != None:
         eventname = str(event.ID())
-        write(f, "void dispatch_" + eventname + "() {");
-        write(f, "#if SUPPORT_MODEL_CHECKING");
-        write(f, "setInstance(this);");
-        write(f, "#endif");
-        write(f, "switch (state) {");
-        write(f, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \""+eventname+"\"); break; }");
+        write(f, "void dispatch_" + eventname + "();");
+        write(c, "void "+machinename+"::dispatch_" + eventname + "() {");
+        write(c, "#if SUPPORT_MODEL_CHECKING");
+        write(c, "setInstance(this);");
+        write(c, "#endif");
+        write(c, "switch (state) {");
+        write(c, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \""+eventname+"\"); break; }");
         for state in state_list:
             statename = stateName2String(state.stateName())
-            write(f, "case STATES::STATE_" + statename + ": {");
+            write(c, "case STATES::STATE_" + statename + ": {");
             if hasEventHandler(state, eventname):
-                write(f, "state_union." + statename + ".handler_" + eventname + "(this);");
+                write(c, "state_union." + statename + ".handler_" + eventname + "(this);");
             else:
                 pretty_name = stateName2PrettyString(state.stateName())
-                write(f, "STATE_MISSING_EVENT_HANDLER(\"" + pretty_name + "\" , \"" + eventname + "\");");
-            write(f, "break;");
-            write(f, "}");
-        write(f, "}");
+                write(c, "STATE_MISSING_EVENT_HANDLER(\"" + pretty_name + "\" , \"" + eventname + "\");");
+            write(c, "break;");
+            write(c, "}");
+        write(c, "}");
+        write(c, "}");
 
-        write(f, "}");
 
-def generate_machine_decl(f, decl, hashmethod, compare, equal_compare):
+def generate_machine_decl_access(f, c, decl, index):
+    if decl != None:
+        names = decl.ID()
+        write(f, str(names[0]) + " & " + str(names[1]) + " = std::get<"+str(index)+">(fields);")
+
+def generate_machine_decl(f, c, decl, index):
     if decl != None:
         names = decl.ID()
         op = ""
         if decl.modifier != None:
             op += decl.modifier.text
-        write(f, str(names[0]) + " " + op + " " + str(names[1]) + ";")
+        if (index > 0):
+            f.write( "," + str(names[0])); # + " " + op + " " + str(names[1]) + ";")
+        else:
+            f.write(str(names[0])); # + " " + op + " " + str(names[1]) + ";")
 
-        if compare != None:
-            write(compare, "if (" + str(names[1]) + " < other." + str(names[1])+  ") return true;");
-            
-        if equal_compare != None:
-            write(equal_compare, "if (" + str(names[1]) + " != other." + str(names[1])+  ") return false;");
-            
-        if hashmethod != None:
-            write(hashmethod, "hashValue.add(" + str(names[1]) + ".getHash());");
 
-def generate_events(f, codeRule, events):
+def generate_events(f, c, codeRule, events):
     for r in codeRule:
-        generate_machine_event(f, r.eventRule(), events)
+        generate_machine_event(f, c, r.eventRule(), events)
 
-def generate_event_handler(f, codeRule, state_list):
+def generate_event_handler(f, c, machinename, codeRule, state_list):
     for r in codeRule:
-        generate_machine_event_handler(f, r.eventRule(), state_list)
+        generate_machine_event_handler(f, c, machinename, r.eventRule(), state_list)
         
-def generate_states(f, codeRule, state_list, states_compare, equal_states_compare, states_str,enum_states_str):
+def generate_states(f, c, machine_name, codeRule, state_list, enum_states_str):
     for r in codeRule:
-        generate_machine_state(f, r.stateRule(), state_list)
+        generate_machine_state(f, c, machine_name, r.stateRule(), state_list)
         
     f.write("union {\n");
     for s in state_list:
@@ -385,25 +369,6 @@ def generate_states(f, codeRule, state_list, states_compare, equal_states_compar
         name = stateName2String(s.stateName())
         pretty_name = stateName2PrettyString(s.stateName())
         
-        write(states_compare, "case STATES::STATE_" + name + ": {")
-        write(states_compare, "   if (state_union." + name + " < other.state_union." + name + ") {");
-        write(states_compare, "       return true;");
-        write(states_compare, "   }");
-        write(states_compare, "   break;");
-        write(states_compare, "}");
-
-        write(equal_states_compare, "case STATES::STATE_" + name + ": {")
-        write(equal_states_compare, "   if (state_union." + name + " == other.state_union." + name + ") {");
-        write(equal_states_compare, "       return true;");
-        write(equal_states_compare, "   }");
-        write(equal_states_compare, "   break;");
-        write(equal_states_compare, "}");
-
-        write(states_str, "case STATES::STATE_" + name + ": {")
-        write(states_str, "   ret += state_union." + name + ".toString();");
-        write(states_str, "   break;");
-        write(states_str, "}");
-
         write(enum_states_str, "case STATES::STATE_" + name + ": {")
         write(enum_states_str, "   return \"" + pretty_name + "\";");
         write(enum_states_str, "}");
@@ -419,9 +384,21 @@ def generate_event_enum(f, codeRule, genString):
         generate_machine_event_enum(f, r.eventRule(), genString)
 
         
-def generate_decls(f, codeRule, hashmethod, compare, equal_compare):
+def generate_decls(f, c, codeRule):
+    f.write("std::tuple<");
+    index = 0
     for r in codeRule:
-        generate_machine_decl(f, r.declRule(), hashmethod, compare, equal_compare)
+        if r.declRule() != None:
+            generate_machine_decl(f, c, r.declRule(), index)
+            index += 1
+    write(f, "> fields;");
+
+    index = 0
+    for r in codeRule:
+        if r.declRule() != None:
+            generate_machine_decl_access(f, c, r.declRule(), index)
+            index += 1
+
 
 def generate_event_ctor_call(h, eventRule, first):
     prefix = ": " if first else ", "
@@ -429,49 +406,47 @@ def generate_event_ctor_call(h, eventRule, first):
     write(h, prefix + name + "(EVENT::EVENT_" + name + ")");
     
 
-def generate_constructor(h, machineRule, name):
+def generate_constructor(h, c, machineRule, name):
     first = True
-    write(h, name + "()");
+    write(h, name + "();");
+    write(c, name + "::" + name + "()");
     for r in machineRule.codeRule():
         e = r.eventRule()
         if e != None:
-            generate_event_ctor_call(h, e, first);
+            generate_event_ctor_call(c, e, first);
             first = False
-    write(h, "{");
-    write(h, "#if SUPPORT_MODEL_CHECKING");
-    write(h, "  setInstance(this);");
-    write(h, "#endif");
-    write(h, "}");
+    write(c, "{");
+    write(c, "#if SUPPORT_MODEL_CHECKING");
+    write(c, "  setInstance(this);");
+    write(c, "#endif");
+    write(c, "}");
 
 
-def generate_emit_dispatch(h):
+def generate_emit_dispatch(h,c, name):
     global event_list;
-    write(h, "void do_emit(const Event &event) {");
-    write(h, "#if SUPPORT_MODEL_CHECKING");
-    write(h, "setInstance(this);");
-    write(h, "#endif");
-    write(h, "switch (event.getType()) {");
-    write(h, "default: { STATE_BAD_EVENT_HANDLER(\"none\", \"event\"); break; }");
+    write(h, "void do_emit(const Event &event);");
+    write(c, "void "+name+"::do_emit(const Event &event) {");
+    write(c, "#if SUPPORT_MODEL_CHECKING");
+    write(c, "setInstance(this);");
+    write(c, "#endif");
+    write(c, "switch (event.getType()) {");
+    write(c, "default: { STATE_BAD_EVENT_HANDLER(\"none\", \"event\"); break; }");
     for ev in event_list:
         eventname = str(ev.ID());
-        write(h, "case EVENT::EVENT_"+eventname+": dispatch_"+eventname+"(); break;");
-    write(h, "}");
-    write(h, "}");
+        write(c, "case EVENT::EVENT_"+eventname+": dispatch_"+eventname+"(); break;");
+    write(c, "}");
+    write(c, "}");
 
 
 class CGeneratorListener(dslListener):
-    def __init__(self, h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str, enum_states_str):
-        self.states_str = states_str
+    def __init__(self, h, c, test, enums, events, enum_states_str, baseName):
         self.enum_states_str = enum_states_str
-        self.equal_compare = equal_compare
-        self.equal_states_compare = equal_states_compare
         self.test = test
-        self.states_compare = states_compare
-        self.compare = compare
         self.events = events
         self.h = h
+        self.c = c
         self.enums = enums
-        self.hashmethod = hashmethod;
+        self.baseName = baseName
 
     def enterTestsuiteRule(self, ctxt):
         global test_suite_list;
@@ -521,11 +496,12 @@ class CGeneratorListener(dslListener):
 
         state_list = []
         ctxt.state_list = state_list;
-          
+
+        write(self.enums, "namespace " + baseName + "{")
         write(self.enums, "enum class STATES {");
         write(self.enums, "STATE_NONE,");
         generate_states_enum(self.enums, ctxt.codeRule(), state_list)
-        write(self.enums, "} state;");
+        write(self.enums, "};");
         
         write(self.enums, "enum class EVENT {");
         write(self.enums, "EVENT_NONE,");
@@ -538,19 +514,19 @@ class CGeneratorListener(dslListener):
         generate_event_enum(self.enums, ctxt.codeRule(), False)
         write(self.enums, "   }");
         write(self.enums, "}");
+        write(self.enums, "}")
 
         # generate CTOR:
-        generate_constructor(self.h, ctxt, name);
+        generate_constructor(self.h, self.c, ctxt, name);
+        generate_events(self.h, self.c, ctxt.codeRule(), self.events)
+        write(self.h, "");
+        generate_event_handler(self.h, self.c, name, ctxt.codeRule(), state_list)
+        write(self.h, "");
+        generate_decls(self.h, self.c, ctxt.codeRule())
+        write(self.h, "");
+        generate_states(self.h, self.c, name, ctxt.codeRule(), state_list, self.enum_states_str)
 
-        generate_events(self.h, ctxt.codeRule(), self.events)
-        write(self.h, "");
-        generate_event_handler(self.h, ctxt.codeRule(), state_list)
-        write(self.h, "");
-        generate_decls(self.h, ctxt.codeRule(), self.hashmethod, self.compare, self.equal_compare)
-        write(self.h, "");
-        generate_states(self.h, ctxt.codeRule(), state_list, self.states_compare, self.equal_states_compare, self.states_str, self.enum_states_str)
-
-        generate_emit_dispatch(self.h);
+        generate_emit_dispatch(self.h, self.c, name);
         
 
 class DottyGeneratorListener(dslListener):
@@ -631,17 +607,12 @@ def generateC(tree, fileName, baseName):
     test.write("// generated from " + fileName + "\n");
     
     h          = StringStream()
-    hashmethod = StringStream()
+    c          = StringStream()
     enums      = StringStream()
     events     = StringStream()
-    compare    = StringStream()
-    states_compare = StringStream()
-    states_str = StringStream()
-    equal_compare    = StringStream()
-    equal_states_compare = StringStream()
     enum_states_str = StringStream()
     
-    printer = CGeneratorListener(h, test, enums, hashmethod, events, compare, states_compare, equal_compare, equal_states_compare, states_str, enum_states_str)
+    printer = CGeneratorListener(h, c, test, enums, events, enum_states_str, baseName)
     walker  = ParseTreeWalker()
     walker.walk(printer, tree)
 
@@ -655,19 +626,20 @@ def generateC(tree, fileName, baseName):
     names = {}
     names['base_name'] = baseName
     names['state_machine_name'] = str(currentMachine.ID())
-    names['MAIN_CODE'] = h.code
+    names['MAIN_CODE'] = c.code
+    names['MAIN_DECL'] = h.code
     names['ENUM_CODE'] = enums.code
-    names['HASH_CODE'] = hashmethod.code
-    names['COMPARE_FIELDS'] = compare.code
-    names['COMPARE_STATES'] = states_compare.code
-    names['EQUAL_FIELDS'] = equal_compare.code
-    names['EQUAL_STATES'] = equal_states_compare.code
     names['EVENT_VEC'] = events.code
-    names['STATES_TO_STRING'] = states_str.code
     names['STATE2STR'] = enum_states_str.code
     
-    with open(template_path + '/template.generated_code.h') as x: f = x.read()
+    with open(template_path + '/template.generated_code.hpp') as x: f = x.read()
     h = open("generated_state_machine_"+baseName+".hpp", "w")
+    rendered = pystache.Renderer().render(f, names)
+    h.write(rendered)
+    h.close()
+
+    with open(template_path + '/template.generated_code.cpp') as x: f = x.read()
+    h = open("generated_state_machine_"+baseName+".cpp", "w")
     rendered = pystache.Renderer().render(f, names)
     h.write(rendered)
     h.close()

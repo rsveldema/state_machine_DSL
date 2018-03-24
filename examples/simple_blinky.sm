@@ -1,0 +1,76 @@
+
+machine Blinky {
+
+  event b1;
+  event b2;
+  event blip;
+  Led led1;
+  Led led2;
+ 
+  initial state bootup {
+    entry {
+      ::init(led1, 1);
+      ::init(led2, 2);
+      transition blink1;
+    }
+  }
+
+  state blink1 {
+    entry {
+      led1.on();
+      emit blip;
+    }
+    
+    event blip {
+      led1.toggle();
+      led1.toggle();	
+      //emit blip;
+    }
+    
+    event b1 {
+      printf("ignoring button1 press, already in b1\n");
+    }
+    
+    event b2 {
+      transition blink2;
+    }
+    
+    exit {
+      led1.off();
+    }
+  }
+  
+  state blink2 {
+    entry {
+      led2.on();
+      emit blip;
+    }
+    
+    event blip {
+      led2.toggle();
+      //      emit blip;
+    }
+    
+    event b1 {
+      transition blink1;
+    }
+    
+    event b2 {
+      printf("ignoring button2 press, already in b2\n");
+    }
+    
+    exit {
+      led2.off();
+    }
+  }
+}
+
+
+testsuite buttonPresserTest {
+  test simple_race {
+    transition bootup;
+    assert led1.isOn();
+    emit b2;
+    emit b1;
+  }
+}

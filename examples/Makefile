@@ -9,7 +9,9 @@ LDFLAGS_MC=$(LDFLAGS) #-fsanitize=address
 
 LDFLAGS=-L$(HOME)/CUnitHome/lib/ -lcunit
 
-all: test_boiler test_power_manager test_blinky model_check_boiler model_check_blinky model_check_power_manager
+all: test_simple_blinky
+
+xall: test_boiler test_power_manager test_blinky model_check_boiler model_check_blinky model_check_power_manager
 
 model_check_boiler: generated_test_boiler.cc
 	g++ $(CXXFLAGS_MC) model_check_boiler.cc ../model_checker/support_model_checker.cc 
@@ -39,6 +41,12 @@ generated_test_blinky.cc: blinky.sm
 	astyle generated_state_machine_blinky.hpp
 	astyle generated_test_blinky.cc
 
+generated_test_simple_blinky.cc: simple_blinky.sm
+	@echo "------------ generate code"
+	python3 ../src/generate.py simple_blinky.sm -path:../templates
+	astyle generated_state_machine_simple_blinky.hpp
+	astyle generated_test_simple_blinky.cc
+
 generated_test_boiler.cc: boiler.sm
 	@echo "------------ generate code"
 	cpp boiler.sm > /tmp/boiler.sm
@@ -49,14 +57,16 @@ generated_test_boiler.cc: boiler.sm
 -include generated_test_blinky.d generated_test_power_manager.d	main_boiler.d support_statemachine.d generated_test_boiler.d	main_blinky.d main_power_manager.d
 
 test_power_manager: generated_test_power_manager.o main_power_manager.o support_statemachine.o
-	g++ -o test_power_manager main_power_manager.o generated_test_power_manager.o support_statemachine.o $(LDFLAGS)
+	g++ -o test_power_manager $^ $(LDFLAGS)
 
 test_boiler: generated_test_boiler.o main_boiler.o support_statemachine.o
-	g++ -o test_boiler main_boiler.o generated_test_boiler.o support_statemachine.o $(LDFLAGS)
-
+	g++ -o test_boiler $^ $(LDFLAGS)
 
 test_blinky: generated_test_blinky.o main_blinky.o support_statemachine.o
-	g++ -o test_blinky main_blinky.o generated_test_blinky.o support_statemachine.o $(LDFLAGS)
+	g++ -o test_blinky $^ $(LDFLAGS)
+
+test_simple_blinky: generated_test_simple_blinky.o main_simple_blinky.o support_statemachine.o  generated_state_machine_simple_blinky.o
+	g++ -o test_simple_blinky $^ $(LDFLAGS)
 
 
 clean:

@@ -6,8 +6,11 @@
 //------------------
 //------------------
 
-#include "builtins_statemachine.h"
-#include "support_statemachine.h"
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "builtins_statemachine.hpp"
+#include "support_statemachine.hpp"
 
 #include "generated_state_machine_{{base_name}}.hpp"
 
