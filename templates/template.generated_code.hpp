@@ -29,19 +29,22 @@ namespace {{base_name}}
   }
 }
 
+static inline const char *state_2_string({{base_name}}::STATES s)
+{
+  return {{base_name}}::state_2_string(s);
+}
+
 #include "AbstractStateMachine.hpp"
 #include "DelayedEventsStateMachine.hpp"
 #include "ModelCheckeableStateMachine.hpp"
-#include "TraceableStateMachine.hpp"
 
 #include "support_{{base_name}}.hpp"
 
-
-class {{state_machine_name}} : public AbstractStateMachine<{{base_name}}::EVENT,
+class BASE_{{state_machine_name}} : public AbstractStateMachine<{{base_name}}::EVENT,
                                                            {{base_name}}::STATES>
 {
  public:
-   static const size_t MAX_EVENTS = 16;
+  static const size_t MAX_EVENTS = 16;
   typedef tiny_vector<Event, MAX_EVENTS> EventVector;
     
   EventVector getEventVector();
@@ -50,4 +53,11 @@ class {{state_machine_name}} : public AbstractStateMachine<{{base_name}}::EVENT,
 };
 
 void registerTests_{{base_name}} ();
+
+#if {{USE_FEATURE_CLASS}}
+typedef {{base_class}}<BASE_{{state_machine_name}}> {{state_machine_name}};
+#else
+typedef BASE_{{state_machine_name}} {{state_machine_name}};
+#endif
+
 #endif

@@ -60,13 +60,14 @@ class TraceEntry
       {
       case TraceEntryType::NONE: break;
       case TraceEntryType::EVENT:
-	return  prefix + std::string("event<") + machine_t::state_2_string(state) + ", " + machine_t::eventToString(event) + ">";
+	//return  prefix + std::string("event<") + state_2_string(state) + ", " + machine_t::eventToString(event) + ">"; 
 	
       case TraceEntryType::ENTER:
-	return prefix + std::string("enter<") + machine_t::state_2_string(state) + ">";
+	//return prefix + std::string("enter<") + state_2_string(state) + ">";
 	
       case TraceEntryType::LEAVE:
-	return prefix + std::string("leave<") + machine_t::state_2_string(state) + ">";
+	//return prefix + std::string("leave<") + state_2_string(state) + ">";
+	;
       }
     return "unknown trace entry type?";
   }

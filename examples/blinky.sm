@@ -1,6 +1,7 @@
 
-machine Blinky {
 
+machine Blinky<modelcheckable>
+{
   event b1;
   event b2;
   event blip;

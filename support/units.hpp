@@ -99,74 +99,70 @@ void time2str(const units::micros &micros,
 	      char *buffer,
 	      size_t buffer_size);
 
-namespace ZEP
+
+class Timeout
 {
-  namespace Utilities
-  {
-    class Timeout
-    {
-    private:
-      units::micros deadline;
+private:
+  units::micros deadline;
   
-    public:
-    Timeout()
-      : deadline(0)
-	{      
-	}
-      
-    Timeout(const Timeout &t)
-      : deadline(t.deadline)
-	{
-	}
-  
-    Timeout(const units::micros &time)
-      : deadline(time + currentTimeMicros())
-	{
-	}
-      
-      Timeout &operator = (const Timeout &t)
-      {
-	this->deadline = t.deadline;
-	return *this;
-      }
-
-
-      std::string toString() const
-      {
-	return "timeout:" + deadline.toString();
-      }
-
-      
-      bool hasElapsed() const
-      {
-	const units::micros &now = currentTimeMicros();
-	return now > deadline;
-      }
-      
-      units::micros get() const { return deadline; }
-      
-      bool operator < (const Timeout &t2) const
-      {
-	return get() < t2.get();
-      }
-
-      bool operator != (const Timeout &t2) const
-      {
-	return get() != t2.get();
-      }
-
-      bool operator == (const Timeout &t2) const
-      {
-	return get() == t2.get();
-      }
-
-      bool operator > (const Timeout &t2) const
-      {
-	return get() > t2.get();
-      }
-    };
+public:
+  Timeout()
+    : deadline(0)
+  {      
   }
-}
+      
+  Timeout(const Timeout &t)
+    : deadline(t.deadline)
+  {
+  }
+  
+  Timeout(const units::micros &time)
+    : deadline(time + currentTimeMicros())
+  {
+  }
+      
+  Timeout &operator = (const Timeout &t)
+  {
+    this->deadline = t.deadline;
+    return *this;
+  }
+
+
+  std::string toString() const
+  {
+    return "timeout:" + deadline.toString();
+  }
+
+      
+  bool hasElapsed() const
+  {
+    const units::micros &now = currentTimeMicros();
+    return now > deadline;
+  }
+      
+  units::micros get() const { return deadline; }
+      
+  bool operator < (const Timeout &t2) const
+  {
+    return get() < t2.get();
+  }
+
+  bool operator != (const Timeout &t2) const
+  {
+    return get() != t2.get();
+  }
+
+  bool operator == (const Timeout &t2) const
+  {
+    return get() == t2.get();
+  }
+
+  bool operator > (const Timeout &t2) const
+  {
+    return get() > t2.get();
+  }
+};
+
  
 
 

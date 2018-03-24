@@ -138,7 +138,7 @@ def generate_expr_stmt(f, s):
 
     
 def generate_after(f, after):
-    write(f, "self->emit(self->" + str(after.ID()) + ", ZEP::Utilities::Timeout(");
+    write(f, "self->emit(self->" + str(after.ID()) + ", Timeout(");
     generate_expr(f, after.expr());
     f.write("));\n");
 
@@ -192,16 +192,16 @@ def generate_block(f, blk):
 def generate_eventHandler(f, c, name, machine_name, state, eventHandlerList):
     for eventHandler in eventHandlerList:
         event_name = str(eventHandler.ID())
-        write(f, "void handler_" + event_name + "("+str(currentMachine.ID())+" *self);");
-        write(c, "void  "+machine_name+"::TYPE_"+name+"::handler_" + event_name + "("+str(currentMachine.ID())+" *self) {");
+        write(f, "void handler_" + event_name + "(BASE_"+str(currentMachine.ID())+" *self);");
+        write(c, "void  BASE_"+machine_name+"::TYPE_"+name+"::handler_" + event_name + "(BASE_"+str(currentMachine.ID())+" *self) {");
         generate_block(c, eventHandler.block());
         write(c, "}");
         
 
 def generate_entryBlock(f, c, name, machine_name, state, entryBlkList):
     state_name = stateName2String(state.stateName())
-    write(f, "void entry("+str(currentMachine.ID())+" *self);");
-    write(c, "void  "+machine_name + "::TYPE_" + name+"::entry("+str(currentMachine.ID())+" *self) {");
+    write(f, "void entry(BASE_"+str(currentMachine.ID())+" *self);");
+    write(c, "void  BASE_"+machine_name + "::TYPE_" + name+"::entry(BASE_"+str(currentMachine.ID())+" *self) {");
     write(c, "memset(this, 0, sizeof(*this));");
     write(c, "self->state = STATES::STATE_" + state_name + ";");
     for entryBlk in entryBlkList:
@@ -210,8 +210,8 @@ def generate_entryBlock(f, c, name, machine_name, state, entryBlkList):
     
 def generate_exitBlock(f, c, name, machine_name, state, exitBlkList):
     state_name = stateName2String(state.stateName())
-    write(f, "void exit("+str(currentMachine.ID())+" *self);");
-    write(c, "void  "+machine_name + "::TYPE_" +name+"::exit("+str(currentMachine.ID())+" *self) {");
+    write(f, "void exit(BASE_"+str(currentMachine.ID())+" *self);");
+    write(c, "void  BASE_"+machine_name + "::TYPE_" +name+"::exit(BASE_"+str(currentMachine.ID())+" *self) {");
     for exitBlk in exitBlkList:
         generate_block(c, exitBlk.block());
     write(c, "}");
@@ -248,7 +248,7 @@ def generate_machine_state(f, c, machine_name, state, state_list):
         write(f, "};");
 
         write(f, "void transition(const TYPE_"+name+" &);");
-        write(c, "void "+machine_name+"::transition(const TYPE_"+name+" &) {");
+        write(c, "void BASE_"+machine_name+"::transition(const TYPE_"+name+" &) {");
         write(c, "switch (state) {");
         write(c, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \"state\"); break; }");
         write(c, "case STATES::STATE_NONE: break;");
@@ -262,7 +262,7 @@ def generate_machine_state(f, c, machine_name, state, state_list):
         print("initial state["+name+"]: " + str(state.stateModifier()))
         if True: #isInitialState(state.stateModifier()):
             write(f, "void initial_transition(const TYPE_"+name+" &);");
-            write(c, "void "+machine_name+"::initial_transition(const TYPE_"+name+" &) {");
+            write(c, "void BASE_"+machine_name+"::initial_transition(const TYPE_"+name+" &) {");
             write(c, "switch (state) {");
             write(c, "default: break; ");
             write(c, "case STATES::STATE_NONE: break;");
@@ -296,7 +296,7 @@ def generate_machine_event(f, c, event, events):
         name = str(event.ID())
         write(f, "Event " + name + ";");
         if isExternal(event):
-            write(events, "vec.push_back(" + name + ");")
+            write(events, "vec.add(" + name + ");")
 
 
 def hasEventHandler(state, eventname):
@@ -310,7 +310,7 @@ def generate_machine_event_handler(f, c, machinename, event, state_list):
     if event != None:
         eventname = str(event.ID())
         write(f, "void dispatch_" + eventname + "();");
-        write(c, "void "+machinename+"::dispatch_" + eventname + "() {");
+        write(c, "void BASE_"+machinename+"::dispatch_" + eventname + "() {");
         write(c, "#if SUPPORT_MODEL_CHECKING");
         write(c, "setInstance(this);");
         write(c, "#endif");
@@ -408,8 +408,8 @@ def generate_event_ctor_call(h, eventRule, first):
 
 def generate_constructor(h, c, machineRule, name):
     first = True
-    write(h, name + "();");
-    write(c, name + "::" + name + "()");
+    write(h, "BASE_" + name + "();");
+    write(c, "BASE_" + name + "::BASE_" + name + "()");
     for r in machineRule.codeRule():
         e = r.eventRule()
         if e != None:
@@ -425,7 +425,7 @@ def generate_constructor(h, c, machineRule, name):
 def generate_emit_dispatch(h,c, name):
     global event_list;
     write(h, "void do_emit(const Event &event);");
-    write(c, "void "+name+"::do_emit(const Event &event) {");
+    write(c, "void BASE_"+name+"::do_emit(const Event &event) {");
     write(c, "#if SUPPORT_MODEL_CHECKING");
     write(c, "setInstance(this);");
     write(c, "#endif");
@@ -440,6 +440,7 @@ def generate_emit_dispatch(h,c, name):
 
 class CGeneratorListener(dslListener):
     def __init__(self, h, c, test, enums, events, enum_states_str, baseName):
+        self.base_class = None
         self.enum_states_str = enum_states_str
         self.test = test
         self.events = events
@@ -497,6 +498,15 @@ class CGeneratorListener(dslListener):
         state_list = []
         ctxt.state_list = state_list;
 
+        for p in ctxt.machineProperty():
+            if p.op.text == 'delayed_events':
+                self.base_class = "DelayedEventsStateMachine"
+            elif p.op.text == 'modelcheckable':
+                self.base_class = "ModelCheckableStateMachine"
+            else:
+                print("don't know state machine property: " + p.op.text);
+                sys.exit(1);
+        
         write(self.enums, "namespace " + baseName + "{")
         write(self.enums, "enum class STATES {");
         write(self.enums, "STATE_NONE,");
@@ -624,6 +634,8 @@ def generateC(tree, fileName, baseName):
 
 
     names = {}
+    names['USE_FEATURE_CLASS'] = "0" if printer.base_class == None else "1"
+    names['base_class'] = printer.base_class
     names['base_name'] = baseName
     names['state_machine_name'] = str(currentMachine.ID())
     names['MAIN_CODE'] = c.code

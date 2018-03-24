@@ -4,7 +4,8 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
-#include "../support/stats.h"
+
+#include "../support/stats.hpp"
 
 template<class T>
 class RandomPathChecker
@@ -42,9 +43,9 @@ private:
     typename T::delayed_event_t found_de;
     if (machine->removeEarliestDeadlineEvent(found_de))
       {	
-	warp_speed_clock(found_de.first);
+	warp_speed_clock(found_de.timeout);
 	
-	machine->do_emit(found_de.second);
+	machine->do_emit(found_de.event);
 	return true;
       }
     else

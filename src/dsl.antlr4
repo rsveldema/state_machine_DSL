@@ -11,7 +11,13 @@ testsuiteRule: 'testsuite' ID '{' testRule* '}';
 testRule: 'test' ID '{' statement* '}';
 
 
-machineRule: 'machine' ID '{' codeRule*  '}';
+machineRule: 'machine' ID machineProperty* '{' codeRule*  '}';
+
+machineProperty:
+   '<' op='delayed_events' '>'
+|  '<' op='modelcheckable' '>'
+;
+
 codeRule: stateRule | eventRule | declRule;
 
 

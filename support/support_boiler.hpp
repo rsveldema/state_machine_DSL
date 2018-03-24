@@ -30,7 +30,7 @@ class Stopwatch
 class Boiler
 {
  private:
-  ZEP::Utilities::Timeout t;
+  Timeout t;
   bool enabled = false;
   
  public:
@@ -42,8 +42,8 @@ class Boiler
   bool operator < (const Boiler &e) const { return getHash() < e.getHash(); }
   bool operator != (const Boiler &e) const { return enabled != e.enabled; }
   
-  void on()   { assert(! enabled); enabled = true;  t = ZEP::Utilities::Timeout(units::secs(4)); }
-  void off()  { assert(enabled);   enabled = false; t = ZEP::Utilities::Timeout(0); }
+  void on()   { assert(! enabled); enabled = true;  t = Timeout(units::secs(4)); }
+  void off()  { assert(enabled);   enabled = false; t = Timeout(0); }
   bool done() { return enabled && t.hasElapsed(); }
 };
 

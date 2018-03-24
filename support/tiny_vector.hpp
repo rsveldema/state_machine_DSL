@@ -9,59 +9,62 @@ class tiny_vector
 {
  private:
   T data[MAX_SIZE];
-  unsigned count;
+  bool valid[MAX_SIZE];
   
  public:
   tiny_vector()
-    : count(0)
     {
+      for (unsigned i=0;i<MAX_SIZE;i++)
+	{
+	  valid[i] = false;
+	}
     }
 
   T &getRandomElement()
   {
-    assert(count > 0);
-    int ix = rand() % count;
-    return at(ix);
-  }
-  
-  unsigned size() const { return count; }
-  
-  void push_back(const T &e)
-  {
-    assert(count < MAX_SIZE);
-    data[count] = e;
-    count++;
+    unsigned ix = rand() % MAX_SIZE;
+    while (1)
+      {
+	if (is_valid(ix))
+	  {
+	    return at(ix);
+	  }
+      }
   }
 
-  struct iterator
+  bool is_valid(unsigned i)
   {
-    unsigned ix;
-    tiny_vector *self;
-    
-    iterator operator++()
-    {
-      unsigned last = ix;
-      ix++;
-      return {last, self};
-    }
+    assert(i < MAX_SIZE);
+    return valid[i];
+  }
+  
+  size_t max_size() const { return MAX_SIZE; }
+  
+  void erase(unsigned i)
+  {
+    assert(i < MAX_SIZE);
+    assert(valid[i]);
+    valid[i] = false;
+  }
+  
+  bool add(const T &e)
+  {
+    for (unsigned i = 0; i < MAX_SIZE; i++)
+      {
+	if (! valid[i])
+	  {
+	    data[i] = e;
+	    valid[i] = true;
+	    return true;
+	  }
+      }
+    assert(false);
+    return false;
+  }
 
-    bool operator != (const iterator &it) const
-    {
-      return ix != it.ix;
-    }
-    
-    T operator *()
-    {
-      assert(self != 0);
-      assert(ix < self->count);
-      return self->data[ix];
-    }    
-  };
-
-  iterator begin() { return {0, this}; }
-  iterator end() { return {count, this}; }
-  T &at(unsigned ix) {
-    assert(ix < count);
+  T &at(unsigned ix)
+  {
+    assert(valid[ix]);
     return data[ix];
   }
 };

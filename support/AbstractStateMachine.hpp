@@ -1,4 +1,5 @@
-
+#include "units.hpp"
+#include <assert.h>
 
 template<typename EVENT_ENUM, typename STATE_ENUM>
 class AbstractStateMachine
@@ -42,9 +43,12 @@ public:
     }
   };
 
-  
   virtual void dump() {}
   virtual void do_emit(const Event &event) = 0;
+  virtual bool emit(const Event &event, const Timeout &timeout)
+  {
+    assert(false); // unimplemented in base class.
+  }
   virtual void emit(const Event &event)
   {
     do_emit(event);

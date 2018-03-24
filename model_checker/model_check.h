@@ -4,9 +4,10 @@
 #include <algorithm>
 #include <vector>
 #include <memory>
-#include "../support/stats.h"
 
-void warp_speed_clock(const ZEP::Utilities::Timeout &t);
+#include "../support/stats.hpp"
+
+void warp_speed_clock(const Timeout &t);
 
 
 template<class T>
@@ -135,9 +136,9 @@ private:
     typename T::delayed_event_t found_de;
     if (p->removeEarliestDeadlineEvent(found_de))
       {	
-	warp_speed_clock(found_de.first);
+	warp_speed_clock(found_de.timeout);
 	
-	p->do_emit(found_de.second);
+	p->do_emit(found_de.event);
 	return true;
       }
     else
@@ -165,9 +166,9 @@ private:
       }
     else
       {
-	for (auto event : p->getEventVector())
+	for (unsigned i=0;i<p->getEventVector().max_size();i++)
 	  {
-	    send_event(p, event);
+	    send_event(p, p->getEventVector().at(i));
 	  }
       }
   }

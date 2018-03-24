@@ -1,7 +1,7 @@
-#include "builtins_statemachine.h"
-#include "support_boiler.h"
+#include "builtins_statemachine.hpp"
+#include "support_boiler.hpp"
 #include "tiny_vector.hpp"
-#include "HashValue.h"
+#include "HashValue.hpp"
 
 /** for the model checker we use logical time units.
  * When doing normal unit tests we use physical time as there it may be more important.
@@ -45,7 +45,7 @@ units::micros currentTimeMicros()
   return t++;
 }
 
-void warp_speed_clock(const ZEP::Utilities::Timeout &timeout)
+void warp_speed_clock(const Timeout &timeout)
 {
   uint64_t old = t;
   t = timeout.get().get();

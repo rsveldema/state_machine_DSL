@@ -43,7 +43,7 @@ void model_check_assert(int line, const char *file, const char *msg);
 
 
 template<class Machine>
-void event_loop(ZEP::Utilities::Timeout &timeout,
+void event_loop(Timeout &timeout,
 		Machine *self)
 {
   while (! timeout.hasElapsed())
@@ -57,7 +57,7 @@ template<class Machine>
 void event_loop(const units::micros &us,
 		Machine *self)
 {
-  ZEP::Utilities::Timeout timeout(us);
+  Timeout timeout(us);
   event_loop(timeout, self);
 }
 

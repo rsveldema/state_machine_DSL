@@ -1,18 +1,27 @@
-
-
-
 #include "builtins_statemachine.hpp"
 #include "tiny_vector.hpp"
 #include "units.hpp"
 
-template<typename Event, typename StateEnum>
-class DelayedEventsStateMachine : public AbstractStateMachine<Event, StateEnum>
+template<class BASE>
+class DelayedEventsStateMachine : public BASE
 {
  public:
-  struct delayed_event_t
+  typedef typename BASE::Event Event;
+  
+  class delayed_event_t
   {
-    const ZEP::Utilities::Timeout timeout;
+  public:
+    Timeout timeout;
     Event event;
+
+    delayed_event_t() {}
+    
+    delayed_event_t(const Timeout &_timeout,
+		    const Event &_event)
+      : timeout(_timeout),
+	event(_event)
+    {
+    }
   };
   
 
@@ -24,7 +33,7 @@ public:
   virtual void emit(const Event &event) override
   {
     process_delayed_events();
-    do_emit(event);
+    this->do_emit(event);
   }
   
   bool hasPendingEvents() const
@@ -32,7 +41,7 @@ public:
     return ! delayed_events_stack.empty();
   }
   
-  bool emit(const Event &event, const ZEP::Utilities::Timeout &timeout)
+  bool emit(const Event &event, const Timeout &timeout)
   {
     if (timeout.hasElapsed ())
       {
@@ -57,15 +66,15 @@ public:
       {
 	if (delayed_events_stack.is_valid(i))
 	  {
-	    const delayed_event_t &de = delayed_events_stack.get(i);
-	    const ZEP::Utilities::Timeout t = de.first;
+	    const delayed_event_t &de = delayed_events_stack.at(i);
+	    const Timeout t = de.timeout;
 	    
 	    if (t.hasElapsed())
 	      {
 		delayed_events_stack.erase(i);
 	    		
-		auto event      = de.second;
-		do_emit(event);
+		auto event      = de.event;
+		this->do_emit(event);
 		success = true;
 	      }
 	  }
@@ -75,15 +84,15 @@ public:
   
   bool removeEarliestDeadlineEvent(delayed_event_t &found_de)
   {
-    ZEP::Utilities::Timeout earliest_time;
+    Timeout earliest_time;
     int earliest_index = -1;
     bool success = false;
     for (size_t i = 0; i < delayed_events_stack.max_size(); i++)
       {
 	if (delayed_events_stack.is_valid(i))
 	  {
-	    const delayed_event_t &de = delayed_events_stack.get(i);
-	    const ZEP::Utilities::Timeout t = de.first;
+	    const delayed_event_t &de = delayed_events_stack.at(i);
+	    const Timeout t = de.timeout;
 	    
 	    if (! success)
 	      {
