@@ -17,24 +17,13 @@ public:
 
 public:
   Trace<ModelCheckableStateMachine, MAX_TRACE_LEN, typename BASE::EVENT, typename BASE::STATES> trace;
-
-  template<typename T>
-  void addHash(HashValue &hashValue, T &a)
-  {
-    hashValue.add(a.getHash());
-  }
-
   
-  HashValue getHash() 
-  {
-    HashValue hashValue;
-    //foreach_tuple_element(this->fields, print_element() );
-    return hashValue;
-  }
+  HashValue getHash();
   
   std::string toString() const
   {
     std::string str("machine(");
+    str += ::state_2_string(this->state);
     str += ")";
     return str;
   }

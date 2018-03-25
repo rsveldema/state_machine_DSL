@@ -46,6 +46,36 @@ namespace tuple_comparers
     
     return compare_LT<I + 1, Tp...>(t1, t2);
   }
+
+    template<typename T>
+    void addHash(HashValue &hashValue, T &t)
+    {
+      hashValue.add(t.getHash());
+    }
+    
+  template<std::size_t I=0, typename... Tp>
+  inline typename std::enable_if<I == sizeof...(Tp), void>::type
+  hasher(HashValue &hashValue,
+	 const std::tuple<Tp...>& t1)
+  {
+  }
+
+  template<std::size_t I=0, typename... Tp>
+  inline typename std::enable_if<I < sizeof...(Tp), void>::type
+  hasher(HashValue &hashValue,
+	 const std::tuple<Tp...>& t1)	 
+  {
+    addHash(hashValue, std::get<I>(t1));
+    hasher<I + 1, Tp...>(hashValue, t1);
+  }    
+}
+
+template<class BASE>
+HashValue ModelCheckableStateMachine<BASE>::getHash() 
+{
+  HashValue hashValue;
+  tuple_comparers::hasher(hashValue, this->fields);
+  return hashValue;
 }
 
 

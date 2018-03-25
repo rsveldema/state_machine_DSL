@@ -20,6 +20,8 @@ class tiny_vector
 	}
     }
 
+  /** NOTE: assumes its not empty.
+   */
   T &getRandomElement()
   {
     unsigned ix = rand() % MAX_SIZE;
@@ -29,6 +31,7 @@ class tiny_vector
 	  {
 	    return at(ix);
 	  }
+	ix = (ix + 1)% MAX_SIZE;
       }
   }
 

@@ -364,11 +364,38 @@ def generate_states(f, c, machine_name, codeRule, state_list, enum_states_str):
         name = stateName2String(s.stateName())
         f.write("TYPE_" + name + " " + name + ";\n");
     f.write("} state_union;\n\n");
-
+    
+    f.write("std::tuple<");
+    comma=""
     for s in state_list:
         name = stateName2String(s.stateName())
-        pretty_name = stateName2PrettyString(s.stateName())
-        
+        f.write(comma + "TYPE_" + name + "*");
+        comma=","
+    f.write("> getStateVector() {\n");
+    f.write("   switch (state) {\n");
+    ix = 0
+    for s in state_list:
+        name = stateName2String(s.stateName())
+        write(f, "case STATES::STATE_" + name + ": {")
+        f.write("return {");
+        comma=""
+        for p in range(0,ix):
+            f.write(comma+"nullptr")
+            comma=", "
+        f.write(comma+"&state_union."+name);
+        comma=", "
+        for p in range(ix+1,len(state_list)):
+            f.write(comma+"nullptr")
+            comma=", "
+        write(f, "};");
+        write(f, "}");
+        ix += 1
+    f.write("   }\n");
+    f.write("}\n");
+    
+    for s in state_list:
+        name = stateName2String(s.stateName())
+        pretty_name = stateName2PrettyString(s.stateName())        
         write(enum_states_str, "case STATES::STATE_" + name + ": {")
         write(enum_states_str, "   return \"" + pretty_name + "\";");
         write(enum_states_str, "}");
@@ -535,7 +562,6 @@ class CGeneratorListener(dslListener):
         generate_decls(self.h, self.c, ctxt.codeRule())
         write(self.h, "");
         generate_states(self.h, self.c, name, ctxt.codeRule(), state_list, self.enum_states_str)
-
         generate_emit_dispatch(self.h, self.c, name);
         
 
