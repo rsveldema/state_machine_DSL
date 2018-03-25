@@ -310,9 +310,6 @@ def generate_machine_event_handler(f, c, machinename, event, state_list):
         eventname = str(event.ID())
         write(f, "void dispatch_" + eventname + "();");
         write(c, "void BASE_"+machinename+"::dispatch_" + eventname + "() {");
-        write(c, "#if SUPPORT_MODEL_CHECKING");
-        write(c, "setInstance(this);");
-        write(c, "#endif");
         write(c, "switch (state) {");
         write(c, "default: { STATE_MISSING_EVENT_HANDLER(\"none\", \""+eventname+"\"); break; }");
         for state in state_list:
@@ -448,10 +445,7 @@ def generate_constructor(h, c, machineRule, name):
         if e != None:
             generate_event_ctor_call(c, e, first);
             first = False
-    write(c, "{");
-    write(c, "#if SUPPORT_MODEL_CHECKING");
-    write(c, "  setInstance(this);");
-    write(c, "#endif");
+    write(c, "{");    
     write(c, "}");
 
 
@@ -459,9 +453,7 @@ def generate_emit_dispatch(h,c, name):
     global event_list;
     write(h, "void do_emit(const Event &event);");
     write(c, "void BASE_"+name+"::do_emit(const Event &event) {");
-    write(c, "#if SUPPORT_MODEL_CHECKING");
-    write(c, "setInstance(this);");
-    write(c, "#endif");
+    write(c, "this->notify_event_emit(event);");
     write(c, "switch (event.getType()) {");
     write(c, "default: { STATE_BAD_EVENT_HANDLER(\"none\", \"event\"); break; }");
     for ev in event_list:

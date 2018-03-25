@@ -70,6 +70,11 @@ public:
     add_assert_hook(assertHook);
   }
   
+  // called from do_emit
+  virtual void notify_event_emit(const typename DelayedEventsStateMachine<BASE>::Event &event) override
+  {
+    setInstance(this);
+  }
 };
 
 

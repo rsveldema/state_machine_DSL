@@ -105,6 +105,11 @@ namespace {{base_name}}
     {
       do_emit(event);
     }
+
+    // called from do_emit
+    virtual void notify_event_emit(const Event &event)
+    {
+    }
   };
   
   

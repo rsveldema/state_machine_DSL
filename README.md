@@ -8,10 +8,17 @@ using std. C++ compilers).
 The DSL also contains facilities for writing unit tests and for
 automatic model checking.
 
+The generated code has some facilities for extensions.
+Extensions exist for delayed sending of events and for model checking support.
+
 ## Example ##
 
 ``` C++
-machine Blinky {
+
+// <modelcheckable> lets creates a model that extends the basic class with features
+// for modelchecking.
+machine Blinky <modelcheckable> 
+{
   // declare events to stimulate the machine:
   event b1 "button 1 pressed";
   
