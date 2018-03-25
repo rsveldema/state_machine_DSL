@@ -25,6 +25,45 @@ class DelayedEventsStateMachine : public BASE
 	event(_event)
     {
     }
+
+    bool operator < (const delayed_event_t &other) const
+    {
+      if (timeout >= other.timeout)
+	{
+	  return false;
+	}
+      if (event.getType() >= other.event.getType())
+	{
+	  return false;
+	}
+      return true;
+    }
+    
+    bool operator >= (const delayed_event_t &other) const
+    {
+      if (timeout < other.timeout)
+	{
+	  return false;
+	}
+      if (event.getType() < other.event.getType())
+	{
+	  return false;
+	}
+      return true;
+    }
+
+    bool operator != (const delayed_event_t &other) const
+    {
+      if (timeout != other.timeout)
+	{
+	  return true;
+	}
+      if (event.getType() != other.event.getType())
+	{
+	  return true;
+	}
+      return false;
+    }
   };
   
 

@@ -3,22 +3,41 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <array>
 
 template<typename T, size_t MAX_SIZE>
 class tiny_vector
 {
- private:
+private:
+ 
   T data[MAX_SIZE];
   bool valid[MAX_SIZE];
-  
- public:
+
+public:
   tiny_vector()
-    {
-      for (unsigned i=0;i<MAX_SIZE;i++)
-	{
-	  valid[i] = false;
-	}
-    }
+  {
+    for (unsigned i=0;i<MAX_SIZE;i++)
+      {
+	valid[i] = false;
+      }
+  }
+
+  typedef T element_t;
+  typedef std::array<T, MAX_SIZE> array;
+  void export_to(array &a,
+		 unsigned &count) const
+  {
+    count = 0;
+    for (unsigned i=0;i<MAX_SIZE;i++)
+      {
+	if (valid[i])
+	  {
+	    a[count] = data[i];
+	    count++;
+	  }
+      }
+  }
+   
 
   /** NOTE: assumes its not empty.
    */

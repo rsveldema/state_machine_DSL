@@ -167,6 +167,12 @@ HashValue ModelCheckableStateMachine<BASE>::getHash()
   return hashValue;
 }
 
+template<typename T>
+int comparer(T &a,
+	     T &b)
+{
+}
+
 
 template<class BASE>
 bool ModelCheckableStateMachine<BASE>::equals(const ModelCheckableStateMachine<BASE> &other,
@@ -183,7 +189,38 @@ bool ModelCheckableStateMachine<BASE>::equals(const ModelCheckableStateMachine<B
       return false;
     }
   
-  return tuple_comparers::compare_fields_tuple(this->fields, other.fields);
+  if (! tuple_comparers::compare_fields_tuple(this->fields, other.fields))
+    {
+      return false;
+    }
+
+
+  typedef typename DelayedEventsStateMachine<BASE>::delayed_stack_t stack_t;
+  unsigned count1 = 0;
+  typename stack_t::array events1;
+  
+  unsigned count2 = 0;
+  typename stack_t::array events2;
+    
+  this->delayed_events_stack.export_to(events1, count1);
+  other.delayed_events_stack.export_to(events2, count2);
+
+  if (count1 != count2)
+    {
+      return false;
+    }
+    
+  std::sort(events1.begin(), events1.begin() + count1);
+  std::sort(events2.begin(), events2.begin() + count2);
+
+  for (unsigned i=0;i<count1;i++)
+    {
+      if (events1[i] != events2[i])
+	{
+	  return false;
+	}
+    }
+  return true;
 }
 
 
@@ -203,9 +240,40 @@ bool ModelCheckableStateMachine<BASE>::operator < (const ModelCheckableStateMach
 	  return false;
 	}
       
-      return tuple_comparers::compare_LT(this->fields, other.fields);
-    }
+      if (tuple_comparers::compare_LT(this->fields, other.fields))
+	{
+	  return true;
+	}
 
-  assert(this->state < other.state);
+      typedef typename DelayedEventsStateMachine<BASE>::delayed_stack_t stack_t;
+      unsigned count1 = 0;
+      typename stack_t::array events1;
+  
+      unsigned count2 = 0;
+      typename stack_t::array events2;
+    
+      this->delayed_events_stack.export_to(events1, count1);
+      other.delayed_events_stack.export_to(events2, count2);
+
+      if (count1 < count2)
+	{
+	  return true;
+	}
+      else if (count1 == count2)
+	{
+	  std::sort(events1.begin(), events1.begin() + count1);
+	  std::sort(events2.begin(), events2.begin() + count2);
+	  
+	  for (unsigned i=0;i<count1;i++)
+	    {
+	      if (events1[i] >= events2[i])
+		{
+		  return false;
+		}
+	    }
+	}
+    }
+    
+  assert(this->state < other.state);  
   return true;
 }

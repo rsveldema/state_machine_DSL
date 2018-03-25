@@ -48,6 +48,11 @@ namespace units
       return value > t.value;
     }
 
+    bool operator >= (const micros &t) const
+    {
+      return value >= t.value;
+    }
+
     bool operator < (const micros &t) const
     {
       return value < t.value;
@@ -145,6 +150,11 @@ public:
   bool operator < (const Timeout &t2) const
   {
     return get() < t2.get();
+  }
+
+  bool operator >= (const Timeout &t2) const
+  {
+    return get() >= t2.get();
   }
 
   bool operator != (const Timeout &t2) const
