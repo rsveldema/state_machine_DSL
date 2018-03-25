@@ -23,7 +23,7 @@ public:
   std::string toString() const
   {
     std::string str("machine(");
-    str += ::state_2_string(this->state);
+    str += state_2_string(this->state);
     str += ")";
     return str;
   }

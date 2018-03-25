@@ -490,7 +490,7 @@ class CGeneratorListener(dslListener):
         test_suite_list.append(suitename)
 
         write(self.test, "namespace "+ suitename + "{");
-        write(self.test, "static "+smn+" *self;\n");
+        write(self.test, "static "+self.baseName + "::" + smn+" *self;\n");
         
         print("testsuite: " + suitename)
         for tr in ctxt.testRule():
@@ -501,8 +501,8 @@ class CGeneratorListener(dslListener):
             write(self.test, "}\n\n");
 
         write(self.test, "static int initTests_"+smn+"() {");
-        write(self.test, " static " + smn + " storage;")
-        write(self.test, " self = new ((void*)&storage)" + smn + "();")
+        write(self.test, " static " + self.baseName + "::" + smn + " storage;")
+        write(self.test, " self = new ((void*)&storage)" + self.baseName + "::" + smn + "();")
         write(self.test, " return CUE_SUCCESS;")
         write(self.test, "}")
 
@@ -540,7 +540,7 @@ class CGeneratorListener(dslListener):
                 print("don't know state machine property: " + p.op.text);
                 sys.exit(1);
         
-        write(self.enums, "namespace " + baseName + "{")
+
         write(self.enums, "enum class STATES {");
         write(self.enums, "STATE_NONE,");
         generate_states_enum(self.enums, ctxt.codeRule(), state_list)
@@ -557,7 +557,7 @@ class CGeneratorListener(dslListener):
         generate_event_enum(self.enums, ctxt.codeRule(), False)
         write(self.enums, "   }");
         write(self.enums, "}");
-        write(self.enums, "}")
+
 
         # generate CTOR:
         generate_constructor(self.h, self.c, ctxt, name);

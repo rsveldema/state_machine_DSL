@@ -59,6 +59,8 @@ int main(int argc, char **argv)
 	  max_step_count_per_machine);
   fprintf(stderr, "seed = %u\n", seed);
   srand(seed);
+
+  using namespace boiler;
   
   WaterBoiler::addAssertHook();
   
