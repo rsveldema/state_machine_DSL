@@ -31,6 +31,7 @@ generated_state_machine_power_manager.cpp generated_test_power_manager.cc: power
 	cpp power_manager.sm > /tmp/power_manager.sm
 	python3 ../src/generate.py /tmp/power_manager.sm -path:../templates
 	astyle generated_state_machine_power_manager.hpp
+	astyle generated_state_machine_power_manager.cpp
 	astyle generated_test_power_manager.cc
 
 generated_state_machine_blinky.cpp generated_test_blinky.cc: blinky.sm
@@ -53,6 +54,7 @@ generated_state_machine_boiler.cpp generated_test_boiler.cc: boiler.sm
 	cpp boiler.sm > /tmp/boiler.sm
 	python3 ../src/generate.py /tmp/boiler.sm -path:../templates
 	astyle generated_state_machine_boiler.hpp
+	astyle generated_state_machine_boiler.cpp
 	astyle generated_test_boiler.cc
 
 -include generated_test_blinky.d generated_test_power_manager.d	main_boiler.d support_statemachine.d generated_test_boiler.d	main_blinky.d main_power_manager.d

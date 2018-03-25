@@ -8,6 +8,7 @@ dslParser*
 test_blinky
 test_power_manager
 test_boiler
+test_simple_blinky
 model_check_boiler
 *.tokens
 generated_*
