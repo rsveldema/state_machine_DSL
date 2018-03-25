@@ -17,7 +17,7 @@ model_check_boiler: generated_test_boiler.cc  model_check_boiler.cc ../model_che
 	g++ $^ -o model_check_boiler $(LDFLAGS_MC)
 
 
-model_check_blinky: generated_test_blinky.o  model_check_blinky.o generated_state_machine_blinky.o  ../model_checker/support_model_checker.o
+model_check_blinky: generated_test_blinky.o  model_check_blinky.o generated_state_machine_blinky.o  ../model_checker/support_model_checker.o 
 	g++ $^ -o model_check_blinky $(LDFLAGS_MC)
 
 

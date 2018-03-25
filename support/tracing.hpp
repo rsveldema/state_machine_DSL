@@ -1,7 +1,7 @@
 #ifndef TRACING_H___H_
 #define TRACING_H___H_
 
-#include <circular_buffer.hpp>
+#include "circular_buffer.hpp"
 #include <string.h>
 
 

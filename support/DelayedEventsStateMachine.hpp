@@ -1,3 +1,6 @@
+#ifndef DELAYED_EVENTS_STATE_MACHINE_H_____
+#define DELAYED_EVENTS_STATE_MACHINE_H_____
+
 #include "builtins_statemachine.hpp"
 #include "tiny_vector.hpp"
 #include "units.hpp"
@@ -126,3 +129,5 @@ public:
     return success;
   }  
 };
+
+#endif

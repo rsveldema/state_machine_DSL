@@ -133,3 +133,4 @@ public:
   }
 };
 	
+#include "../support/ModelCheckableStateMachine.cpp"

@@ -36,7 +36,7 @@ static inline const char *state_2_string({{base_name}}::STATES s)
 
 #include "AbstractStateMachine.hpp"
 #include "DelayedEventsStateMachine.hpp"
-#include "ModelCheckeableStateMachine.hpp"
+#include "ModelCheckableStateMachine.hpp"
 
 #include "support_{{base_name}}.hpp"
 
