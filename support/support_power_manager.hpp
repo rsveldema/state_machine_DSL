@@ -2,7 +2,7 @@
 // provided by programmer in support of tests/boiler.sm
 // included by generated code.
 
-#include "HashValue.h"
+#include "HashValue.hpp"
 
 class PersistentStorage
 {
@@ -49,11 +49,11 @@ class PersistentStorage
     return false;
   }
   
-  bool operator < (const PersistentStorage &s) const
+  bool operator >= (const PersistentStorage &s) const
   {
     for (unsigned i = 0; i < SIZE; i++)
       {
-	if (data[i] >= s.data[i])
+	if (data[i] < s.data[i])
 	  {
 	    return false;
 	  }
@@ -93,9 +93,9 @@ class Environment
     return counter != s.counter;
   }
   
-  bool operator < (const Environment &s) const
+  bool operator >= (const Environment &s) const
   {
-    if (counter >= s.counter)
+    if (counter < s.counter)
       {
 	return false;
       }
@@ -115,6 +115,9 @@ class SuspendToFlashStrategy
     counter = 0;
   }
 
+
+  HashValue getHash() const { return counter; }
+  
   bool shouldSuspendToFLASH()
   {
     counter++;
@@ -131,9 +134,9 @@ class SuspendToFlashStrategy
   }
     
 
-  bool operator < (const SuspendToFlashStrategy &s) const
+  bool operator >= (const SuspendToFlashStrategy &s) const
   {
-    return counter < s.counter;
+    return counter >= s.counter;
   }
 
   std::string toString() const

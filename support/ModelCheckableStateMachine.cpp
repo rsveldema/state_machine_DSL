@@ -113,11 +113,26 @@ namespace tuple_comparers
 
   // =============================================================
 
+  void addHash(HashValue &hashValue, const int32_t t)
+  {
+    hashValue.add(t);
+  }
+  void addHash(HashValue &hashValue, const int64_t t)
+  {
+    hashValue.add(t);
+  }
+  void addHash(HashValue &hashValue, const double t)
+  {
+    hashValue.add(t);
+  }
+
     template<typename T>
     void addHash(HashValue &hashValue, T &t)
     {
       hashValue.add(t.getHash());
     }
+
+  
     
   template<std::size_t I=0, typename... Tp>
   inline typename std::enable_if<I == sizeof...(Tp), void>::type

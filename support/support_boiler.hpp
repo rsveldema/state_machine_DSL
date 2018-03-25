@@ -23,7 +23,7 @@ class Stopwatch
     }
 
   HashValue getHash() const { return state; }
-  bool operator < (const Stopwatch &e) const { return getHash() < e.getHash(); }
+  bool operator >= (const Stopwatch &e) const { return getHash() >= e.getHash(); }
   bool operator != (const Stopwatch &e) const { return state != e.state; }
 };
 
@@ -39,7 +39,7 @@ class Boiler
     }
 
   HashValue getHash() const { return enabled; }
-  bool operator < (const Boiler &e) const { return getHash() < e.getHash(); }
+  bool operator >= (const Boiler &e) const { return getHash() >= e.getHash(); }
   bool operator != (const Boiler &e) const { return enabled != e.enabled; }
   
   void on()   { assert(! enabled); enabled = true;  t = Timeout(units::secs(4)); }
@@ -56,7 +56,7 @@ class Pump
   void off() { state = 3; }
 
   HashValue getHash() const { return state; }
-  bool operator < (const Pump &e) const { return getHash() < e.getHash(); }
+  bool operator >= (const Pump &e) const { return getHash() >= e.getHash(); }
   bool operator != (const Pump &e) const { return state != e.state; }
 };
 

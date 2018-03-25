@@ -1,6 +1,6 @@
 
-machine WaterBoiler {
-
+machine WaterBoiler <modelcheckable>
+{
   event button_on;
   event button_start;
 

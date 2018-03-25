@@ -1,31 +1,32 @@
 
-CXXFLAGS=-c -std=c++17 -g2 -I$(HOME)/CUnitHome/include -DUSE_CUNIT=1 -I. -I../support -MMD
+CXXFLAGS=-c -std=c++17 -g2 -I$(HOME)/CUnitHome/include -DUSE_CUNIT=1 -I. -I../support -MMD 
 
 # comment line to conserve memory.
 CXXFLAGS += -DSTATE_MACHINE_SUPPORT_TRACES
 
-CXXFLAGS_MC=$(CXXFLAGS) -DUSE_MODELCHECK #-fsanitize=address
 LDFLAGS_MC=$(LDFLAGS) #-fsanitize=address
 
 LDFLAGS=-L$(HOME)/CUnitHome/lib/ -lcunit
 
-all: test_simple_blinky test_blinky model_check_blinky
 
-xall: test_boiler test_power_manager test_blinky model_check_boiler model_check_blinky model_check_power_manager
+all: power boiler blinky
 
-model_check_boiler: generated_test_boiler.cc  model_check_boiler.cc ../model_checker/support_model_checker.cc 
+power: test_power_manager model_check_power_manager
+boiler: test_boiler model_check_boiler
+blinky: test_simple_blinky test_blinky model_check_blinky
+
+
+model_check_boiler: generated_test_boiler.o  model_check_boiler.o generated_state_machine_boiler.o ../model_checker/support_model_checker.o
 	g++ $^ -o model_check_boiler $(LDFLAGS_MC)
 
 
 model_check_blinky: generated_test_blinky.o  model_check_blinky.o generated_state_machine_blinky.o  ../model_checker/support_model_checker.o 
 	g++ $^ -o model_check_blinky $(LDFLAGS_MC)
 
+model_check_power_manager: generated_test_power_manager.o model_check_power_manager.o generated_state_machine_power_manager.o ../model_checker/support_model_checker.o
+	g++ $^ -o model_check_power_manager $(LDFLAGS_MC)
 
-model_check_power_manager: generated_test_power_manager.cc
-	g++ $(CXXFLAGS_MC) model_check_power_manager.cc ../model_checker/support_model_checker.cc 
-	g++ model_check_power_manager.o support_model_checker.o -o model_check_power_manager $(LDFLAGS_MC)
-
-generated_test_power_manager.cc: power_manager.sm
+generated_state_machine_power_manager.cpp generated_test_power_manager.cc: power_manager.sm
 	@echo "------------ generate code"
 	cpp power_manager.sm > /tmp/power_manager.sm
 	python3 ../src/generate.py /tmp/power_manager.sm -path:../templates
@@ -47,7 +48,7 @@ generated_state_machine_simple_blinky.cpp generated_test_simple_blinky.cc: simpl
 	astyle generated_state_machine_simple_blinky.cpp
 	astyle generated_test_simple_blinky.cc
 
-generated_test_boiler.cc: boiler.sm
+generated_state_machine_boiler.cpp generated_test_boiler.cc: boiler.sm
 	@echo "------------ generate code"
 	cpp boiler.sm > /tmp/boiler.sm
 	python3 ../src/generate.py /tmp/boiler.sm -path:../templates
@@ -56,7 +57,7 @@ generated_test_boiler.cc: boiler.sm
 
 -include generated_test_blinky.d generated_test_power_manager.d	main_boiler.d support_statemachine.d generated_test_boiler.d	main_blinky.d main_power_manager.d
 
-test_power_manager: generated_test_power_manager.o main_power_manager.o support_statemachine.o generated_state_machine_power_manager.cpp
+test_power_manager: generated_test_power_manager.o main_power_manager.o support_statemachine.o generated_state_machine_power_manager.o
 	g++ -o test_power_manager $^ $(LDFLAGS)
 
 test_boiler: generated_test_boiler.o main_boiler.o support_statemachine.o generated_state_machine_boiler.o

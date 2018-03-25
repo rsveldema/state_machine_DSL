@@ -1,6 +1,6 @@
 
-machine PowerManager {
-
+machine PowerManager  <modelcheckable>
+{
   event button_on;
   event button_off;
   event request_high_compute_performance;

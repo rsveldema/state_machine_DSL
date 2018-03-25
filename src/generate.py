@@ -202,8 +202,7 @@ def generate_entryBlock(f, c, name, machine_name, state, entryBlkList):
     state_name = stateName2String(state.stateName())
     write(f, "void entry(BASE_"+str(currentMachine.ID())+" *self);");
     write(c, "void  BASE_"+machine_name + "::TYPE_" + name+"::entry(BASE_"+str(currentMachine.ID())+" *self) {");
-    write(c, "memset(this, 0, sizeof(*this));");
-    write(c, "self->state = STATES::STATE_" + state_name + ";");
+    write(c, "initialize_state(self, this, STATES::STATE_" + state_name + ");");
     for entryBlk in entryBlkList:
         generate_block(c, entryBlk.block());
     write(c, "}");
@@ -259,7 +258,7 @@ def generate_machine_state(f, c, machine_name, state, state_list):
         write(c, "state_union." + name + ".entry(this);");
         write(c, "}");
 
-        print("initial state["+name+"]: " + str(state.stateModifier()))
+        #print("initial state["+name+"]: " + str(state.stateModifier()))
         if True: #isInitialState(state.stateModifier()):
             write(f, "void initial_transition(const TYPE_"+name+" &);");
             write(c, "void BASE_"+machine_name+"::initial_transition(const TYPE_"+name+" &) {");
@@ -363,8 +362,9 @@ def create_state_accessor(f, state_list, const):
         name = stateName2String(s.stateName())
         f.write(comma + const + " TYPE_" + name + "*");
         comma=","
-    f.write("> getStateVector() "+const+" {\n");
-    f.write("   switch (state) {\n");
+    write(f, "> getStateVector() "+const+" {\n");
+    write(f, "   switch (state) {\n");
+    write(f, "default: assert(false);");
     ix = 0
     for s in state_list:
         name = stateName2String(s.stateName())
@@ -390,11 +390,12 @@ def generate_states(f, c, machine_name, codeRule, state_list, enum_states_str):
     for r in codeRule:
         generate_machine_state(f, c, machine_name, r.stateRule(), state_list)
         
-    f.write("union {\n");
+    write(f, "union StateUnion {\n");
+    write(f, " StateUnion() {}");
     for s in state_list:
         name = stateName2String(s.stateName())
-        f.write("TYPE_" + name + " " + name + ";\n");
-    f.write("} state_union;\n\n");
+        write(f, "TYPE_" + name + " " + name + ";\n");
+    write(f, "} state_union;\n\n");
 
     create_state_accessor(f, state_list, "const")    
     
