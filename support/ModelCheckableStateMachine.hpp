@@ -31,11 +31,14 @@ public:
 
   bool operator == (const ModelCheckableStateMachine &other) const
   {
-    fprintf(stderr, "OPERATOR ==!\n");
     return equals(other, true);
   }
+  bool operator != (const ModelCheckableStateMachine &other) const
+  {
+    return !equals(other, true);
+  }
     
-  bool equals(ModelCheckableStateMachine &other, bool ignore_deadline);  
+  bool equals(const ModelCheckableStateMachine &other, bool ignore_deadline) const;  
   bool operator < (const ModelCheckableStateMachine &other) const;
   
 public:

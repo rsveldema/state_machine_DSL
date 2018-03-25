@@ -354,24 +354,16 @@ def generate_events(f, c, codeRule, events):
 def generate_event_handler(f, c, machinename, codeRule, state_list):
     for r in codeRule:
         generate_machine_event_handler(f, c, machinename, r.eventRule(), state_list)
-        
-def generate_states(f, c, machine_name, codeRule, state_list, enum_states_str):
-    for r in codeRule:
-        generate_machine_state(f, c, machine_name, r.stateRule(), state_list)
-        
-    f.write("union {\n");
-    for s in state_list:
-        name = stateName2String(s.stateName())
-        f.write("TYPE_" + name + " " + name + ";\n");
-    f.write("} state_union;\n\n");
-    
+
+
+def create_state_accessor(f, state_list, const):
     f.write("std::tuple<");
     comma=""
     for s in state_list:
         name = stateName2String(s.stateName())
-        f.write(comma + "TYPE_" + name + "*");
+        f.write(comma + const + " TYPE_" + name + "*");
         comma=","
-    f.write("> getStateVector() {\n");
+    f.write("> getStateVector() "+const+" {\n");
     f.write("   switch (state) {\n");
     ix = 0
     for s in state_list:
@@ -392,6 +384,19 @@ def generate_states(f, c, machine_name, codeRule, state_list, enum_states_str):
         ix += 1
     f.write("   }\n");
     f.write("}\n");
+
+        
+def generate_states(f, c, machine_name, codeRule, state_list, enum_states_str):
+    for r in codeRule:
+        generate_machine_state(f, c, machine_name, r.stateRule(), state_list)
+        
+    f.write("union {\n");
+    for s in state_list:
+        name = stateName2String(s.stateName())
+        f.write("TYPE_" + name + " " + name + ";\n");
+    f.write("} state_union;\n\n");
+
+    create_state_accessor(f, state_list, "const")    
     
     for s in state_list:
         name = stateName2String(s.stateName())
