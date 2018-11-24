@@ -15,13 +15,12 @@
 
 #if USE_MODELCHECK
 #include <assert.h>
-
 void model_check_assert(int line, const char *file, const char *msg);
 #define ASSERT(X) {if (! (X)) { model_check_assert(__LINE__, __FILE__, #X); }}
 #elif USE_CUNIT
 #include "support_cunit.hpp"
 #else
-#warning "UNHANDLED TEST SUITE"
+//#warning "UNHANDLED TEST SUITE"
 #include <assert.h>
 #define ASSERT(X) assert(X)
 #endif

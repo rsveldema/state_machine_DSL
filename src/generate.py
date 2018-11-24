@@ -545,6 +545,7 @@ class CGeneratorListener(dslListener):
 
         write(self.enums, "static const char* eventToString(EVENT ev) {");
         write(self.enums, "   switch (ev) { ");
+        write(self.enums, "   default: ");
         write(self.enums, "   case EVENT::EVENT_NONE: return \"none\"; ");
         generate_event_enum(self.enums, ctxt.codeRule(), False)
         write(self.enums, "   }");
