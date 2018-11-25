@@ -5,7 +5,10 @@
 #include <assert.h>
 #include <string>
 
-#include "HashValue.hpp"
+#include <chrono>
 
+using namespace std::chrono_literals;
+
+#include "HashValue.hpp"
 
 #endif

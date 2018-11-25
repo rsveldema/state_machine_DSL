@@ -53,7 +53,7 @@ void event_loop(Timeout &timeout,
 
 
 template<class Machine>
-void event_loop(const units::micros &us,
+void event_loop(const std::chrono::microseconds &us,
 		Machine *self)
 {
   Timeout timeout(us);

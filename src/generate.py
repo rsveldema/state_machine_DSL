@@ -54,8 +54,18 @@ def generate_if(f, s):
         assert False
 
 
+def translate2chrono(s):
+    prefix = "std::chrono::"
+    if s == "millis":
+        s = "milliseconds"
+    elif s == "micros":
+        s = "microseconds"
+    elif s == "secs":
+          s = "seconds"
+    return prefix + s;
+
 def generate_time(f, t):
-    f.write("units::" + str(t.unit.text) + "(");
+    f.write(translate2chrono(t.unit.text) + "(");
     generate_expr(f, t.expr());
     f.write(")");
         

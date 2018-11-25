@@ -1,8 +1,11 @@
 #include "support_statemachine.hpp"
+#include <chrono>
 
 /** support code for when not using the model checker.
  * The model checker uses the support file ../model_checker/support_model_checker.cc
  */
+
+using namespace std::chrono;
 
 static void *current_ptr;
 
@@ -16,13 +19,13 @@ void *get_thread_local_state_machine_ptr()
   return current_ptr;
 }
 
-units::micros currentTimeMicros()
+microseconds currentTimeMicros()
 {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  units::micros ret = units::secs(tv.tv_sec) + units::micros(tv.tv_usec);
+  auto ret = seconds(tv.tv_sec) + microseconds(tv.tv_usec);
 
-  static units::micros baseline(0);
+  static std::chrono::microseconds baseline(0);
   static bool first = true;
   if (first)
     {
@@ -33,12 +36,12 @@ units::micros currentTimeMicros()
   return ret - baseline;
 }
 
-void time2str(const units::micros &micros,
+void time2str(const std::chrono::microseconds &micros,
 	      char *buf,
 	      size_t buf_size)
 {
-  uint64_t secs   = micros.to_secs();
-  uint64_t millis = micros.to_millis() % 1000;
+  uint64_t secs   = (duration_cast<seconds>(micros)).count();
+  uint64_t millis = (duration_cast<milliseconds>(micros)).count() % 1000;
 
   snprintf(buf, buf_size, "%lld.%lld sec", (long long) secs, (long long) millis);
 }

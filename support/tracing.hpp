@@ -17,7 +17,7 @@ template<class machine_t, typename event_t, typename state_t>
 class TraceEntry
 {
  public:
-  units::micros time;
+  std::chrono::microseconds time;
   TraceEntryType type;
 
   state_t state;
@@ -55,7 +55,9 @@ class TraceEntry
 
   std::string toString()
   {
-    std::string prefix = time.toMicroString() + ":";
+	  char buf[64];
+	  snprintf(buf, sizeof(buf), "%ld:", (long)time.count());
+    std::string prefix = buf;
     switch (type)
       {
       case TraceEntryType::NONE: break;

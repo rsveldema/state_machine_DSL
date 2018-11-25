@@ -34,7 +34,7 @@ class Boiler
   bool enabled = false;
   
  public:
- Boiler() : t(units::secs(0))
+  Boiler() : t(std::chrono::seconds(0))
     {
     }
 
@@ -42,8 +42,8 @@ class Boiler
   bool operator >= (const Boiler &e) const { return getHash() >= e.getHash(); }
   bool operator != (const Boiler &e) const { return enabled != e.enabled; }
   
-  void on()   { assert(! enabled); enabled = true;  t = Timeout(units::secs(4)); }
-  void off()  { assert(enabled);   enabled = false; t = Timeout(0); }
+  void on()   { assert(! enabled); enabled = true;  t = Timeout(4s); }
+  void off()  { assert(enabled);   enabled = false; t = Timeout(0s); }
   bool done() { return enabled && t.hasElapsed(); }
 };
 
