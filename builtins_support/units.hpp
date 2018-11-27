@@ -7,6 +7,10 @@
 
 std::chrono::microseconds currentTimeMicros();
 
+void time2str(const std::chrono::microseconds &micros,
+	      char *buffer,
+	      size_t buffer_size);
+
 
 class Timeout
 {

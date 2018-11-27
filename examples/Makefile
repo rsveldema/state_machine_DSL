@@ -1,5 +1,5 @@
 
-CXXFLAGS=-c -std=c++17 -g2 -I$(HOME)/CUnitHome/include -DUSE_CUNIT=1 -I. -I../support -MMD 
+CXXFLAGS=-c -std=c++17 -g2 -I$(HOME)/CUnitHome/include -DUSE_CUNIT=1 -I. -I../support -I../builtins_support -MMD 
 
 # comment line to conserve memory.
 CXXFLAGS += -DSTATE_MACHINE_SUPPORT_TRACES
