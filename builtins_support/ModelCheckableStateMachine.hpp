@@ -4,7 +4,7 @@
 #include <tuple>
 #include <functional>
 
-#include "../support/tracing.hpp"
+#include "tracing.hpp"
 #include "HashValue.hpp"
 
 #include "DelayedEventsStateMachine.hpp"
