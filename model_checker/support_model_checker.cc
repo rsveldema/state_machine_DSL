@@ -40,15 +40,15 @@ void model_check_assert(int line, const char *file, const char *msg)
 
 
 // in the model checker we do not want the actual time used
-units::micros currentTimeMicros()
+std::chrono::microseconds currentTimeMicros()
 {
-  return t++;
+  return std::chrono::microseconds(t++);
 }
 
 void warp_speed_clock(const Timeout &timeout)
 {
   uint64_t old = t;
-  t = timeout.get().get();
+  t = timeout.get().count();
   
   //fprintf(stderr, "-----> time warp from %lld to %lld\n", (long long) old, (long long) t);
 }
