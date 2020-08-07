@@ -16,3 +16,4 @@ generated_*
 model_check_blinky
 model_check_power_manager
 *#
+.ropeproject
