@@ -21,7 +21,8 @@ machineProperty:
 codeRule: stateRule | eventRule | declRule;
 
 
-declRule: ID ( modifier='*'
+declRule: ID 
+         ( modifier='*'
 	     | modifier='&'
 	     )?
 	  ID ';'

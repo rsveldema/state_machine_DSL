@@ -2,6 +2,9 @@
 
 all:
 	(cd src; make)
+
+
+ex:
 	(cd examples; make)
 
 clean:
