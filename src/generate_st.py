@@ -139,7 +139,7 @@ def generate_expr(f, e):
     elif e.NUMBER() != None:
         f.write(str(e.NUMBER()))
     elif e.STRING() != None:
-        f.write(str(e.STRING()))
+        f.write('str := ' + str(e.STRING()))
     else:
         assert False
 
@@ -167,9 +167,9 @@ def containsDecl(currentMachine, name):
 def generate_lhs(f, lhs):    
     name = str(lhs.ID())
     if lhs.lhsPrefix() != None:
-        f.write("::")
+        f.write(".")
     elif containsDecl(currentMachine, name):
-        f.write("self->")
+        f.write("")
     f.write(name)
     
     for selector in lhs.selector():
@@ -193,11 +193,11 @@ def generate_expr_stmt(f, stmt, ctxt):
 
 def generate_transition(f, stmt, ctxt):    
     name = stateName2String(stmt.stateName())
-    writeln(f, "state := STATE_EXIT_" + ctxt.current_state + ";")
-    writeln(f, "next_state := STATE_ENTER_" + name + ";")
+    writeln(f, "state := StateMachineStateNames.EXIT_STATE_" + ctxt.current_state + ";")
+    writeln(f, "next_state := StateMachineStateNames.ENTER_STATE_" + name + ";")
 
 def generate_emit(f, stmt, ctxt):
-    writeln(f, "event[EVENT_" + str(stmt.ID()) + "] = true;")
+    writeln(f, "events[EventType.EVENT_" + str(stmt.ID()) + "] := TRUE;")
 
 def generate_assert(f, stmt, ctxt):
     writeln(f, "UNIMPL: assert")
@@ -258,51 +258,64 @@ def generate_exit_state_code(f, state, ctxt):
 
 def generate_event_state_code(f, state, ctxt):
     eblks = state.eventHandler()
+    ret = False
     for blk in eblks:
+        ret = True
         event = str(blk.ID())
-        writeln(f, "IF event[EVENT_"+event+"] THEN")
+        writeln(f, "IF events[EventType.EVENT_"+event+"] THEN")
         indent(1)
-        writeln(f, "event[EVENT_"+event+"] := FALSE;")
+        writeln(f, "events[EventType.EVENT_"+event+"] := FALSE;")
         indent(-1)
         generate_block(f, blk.block(), ctxt)
         writeln(f, "END_IF")
+    return ret
 
 
 def generate_switch_case(f, state, ctxt):
     name = stateName2String(state.stateName())
     ctxt.current_state = name
-    writeln(f, "ENTER_STATE_" + name + ": ")
+    writeln(f, "StateMachineStateNames.ENTER_STATE_" + name + ": ")
+    writeln(f, "\tstate_statistics[StateMachineStateNames.ENTER_STATE_" + name + "] := state_statistics[StateMachineStateNames.ENTER_STATE_" + name + "] + 1;")
     generate_enter_state_code(f, state, ctxt)
     indent(1)
-    writeln(f, "IF next_state = STATE_NONE THEN")
+    writeln(f, "IF next_state = StateMachineStateNames.STATE_NONE THEN")
     indent(1)
-    writeln(f, "state := " + "STATE_" + name + ";") 
+    writeln(f, "state := " + "StateMachineStateNames.STATE_" + name + ";") 
     indent(-1)
     writeln(f, "END_IF")
     indent(-1)
+    writeln(f, "")
+    writeln(f, "")
 
-    writeln(f, "STATE_" + name + ": ")
+    writeln(f, "StateMachineStateNames.STATE_" + name + ": ")
     indent(1)
-    generate_event_state_code(f, state, ctxt)
+    if not generate_event_state_code(f, state, ctxt):
+        writeln(f, ";")
     indent(-1)
+    writeln(f, "")
+    writeln(f, "")
 
 
-    writeln(f, "EXIT_STATE_" + name + ": ")
+    writeln(f, "StateMachineStateNames.EXIT_STATE_" + name + ": ")
     generate_exit_state_code(f, state, ctxt)
     indent(1)
     writeln(f, "state := next_state;")
+    writeln(f, "next_state := StateMachineStateNames.STATE_NONE;")
     indent(-1)
+    writeln(f, "")
+    writeln(f, "")
     
 
 def generate_switch(f, codeRule, initial_state, ctxt):
-    writeln(f, "next_state := STATE_NONE;")
     writeln(f, "CASE state OF ")
-    writeln(f, "STATE_NONE:")
+    writeln(f, "StateMachineStateNames.STATE_NONE:")
     indent(1)
-    writeln(f, "state := ENTER_STATE_" + initial_state + ";")
+    writeln(f, "state := StateMachineStateNames.ENTER_STATE_" + initial_state + ";")
     for e in ctxt.event_list:
-        writeln(f, "event[EVENT_"+e+"] := FALSE;")
+        writeln(f, "events[EventType.EVENT_"+e+"] := FALSE;")
     indent(-1)
+    writeln(f, "")
+    writeln(f, "")
 
     for r in codeRule:
         state = r.stateRule()
@@ -319,7 +332,7 @@ def generate_decls(f, codeRule, parse_ctxt):
             names = decl.ID()
             typename = names[0]
             varname = names[1]
-            writeln(f, "" + str(varname) + " : " + str(typename) + ";")
+            writeln(f, str(varname) + " : " + str(typename) + ";")
     indent(-1)
 
 
@@ -343,10 +356,11 @@ class STGeneratorListener(dslListener):
         counters = [1]
 
         enums = open("tmp/states_enum.st", "w")
-        writeln(enums, "TYPE StateMachineStateTypes :")
+        writeln(enums, "TYPE StateMachineStateNames :")
         writeln(enums, "(")
         writeln(enums, "\tSTATE_NONE := 0")
         initial_state = generate_states_enum(enums, ctxt.codeRule(), state_list, counters)
+        writeln(enums, "\t, MAX_STATE := " + str(counters[0]))
         writeln(enums, ");")
         writeln(enums, "END_TYPE")        
         enums.close()

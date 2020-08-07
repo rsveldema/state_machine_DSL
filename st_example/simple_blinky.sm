@@ -3,7 +3,7 @@ machine Blinky {
 
   event b1;
   event b2;
-  event blip;
+  event step;
   Led led1;
   Led led2;
  
@@ -16,13 +16,13 @@ machine Blinky {
   state blink1 {
     entry {
       led1();
-      emit blip;
+      emit step;
     }
     
-    event blip {
+    event step {
       led1();
       led1();	
-      //emit blip;
+      emit step;
     }
     
     event b1 {
@@ -41,12 +41,12 @@ machine Blinky {
   state blink2 {
     entry {
       led2();
-      emit blip;
+      emit step;
     }
     
-    event blip {
+    event step {
       led2();
-      //      emit blip;
+      emit step;
     }
     
     event b1 {
