@@ -11,12 +11,15 @@ VAR
 	ticker : UDINT := 0;
 	state : StateMachineStateTypes := STATE_NONE;
 	events : ARRAY [0..EventType.MAX_EVENT] OF BOOL;
+    EventDetectorFB event_detector;
+    LoggerFB logger;
     {{decls}}
 END_VAR]]></Declaration>
     <Implementation>
       <ST><![CDATA[
 
 ticker := ticker + 1;
+detector(events);
 
 {{switch_code}}]]></ST>
     </Implementation>

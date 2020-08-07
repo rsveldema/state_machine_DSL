@@ -15,18 +15,18 @@ machine Blinky {
 
   state blink1 {
     entry {
-      led1_on();
+      led1();
       emit blip;
     }
     
     event blip {
-      led1_toggle();
-      led1_toggle();	
+      led1();
+      led1();	
       //emit blip;
     }
     
     event b1 {
-      printf("ignoring button1 press, already in b1\n");
+      logger("ignoring button1 press, already in b1\n");
     }
     
     event b2 {
@@ -34,18 +34,18 @@ machine Blinky {
     }
     
     exit {
-      led1_off();
+      led1();
     }
   }
   
   state blink2 {
     entry {
-      led2_on();
+      led2();
       emit blip;
     }
     
     event blip {
-      led2_toggle();
+      led2();
       //      emit blip;
     }
     
@@ -54,11 +54,11 @@ machine Blinky {
     }
     
     event b2 {
-      printf("ignoring button2 press, already in b2\n");
+      logger("ignoring button2 press, already in b2\n");
     }
     
     exit {
-      led2_off();
+      led2();
     }
   }
 }
@@ -67,7 +67,7 @@ machine Blinky {
 testsuite buttonPresserTest {
   test simple_race {
     transition bootup;
-    assert led1.isOn();
+    assert led1();
     emit b2;
     emit b1;
   }
