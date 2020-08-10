@@ -90,10 +90,32 @@ def generate_time(f, t):
     generate_expr(f, t.expr())
     f.write(")")
 
+
+def generate_switch_stmt(f, s, ctxt):
+    write(f, "CASE (")    
+    generate_expr(f, s.expr())
+    f.write(") OF\n")
+
+    for c in s.case():
+        if c.expr() != None:
+            writeln(f, "")
+            emit_indent(f)
+            generate_expr(f, c.expr())
+            f.write(':\n')
+            blk = c.block()
+            generate_block(f, blk, ctxt)
+        else:            
+            writeln(f, "")
+            writeln(f, 'ELSE ')
+            blk = c.block()
+            generate_block(f, blk, ctxt)
+    writeln(f, "END_CASE")
+    pass
+
 def generate_if(f, s, ctxt):    
     write(f, "IF (")
     generate_expr(f, s.expr())
-    f.write(") THEN")
+    f.write(") THEN\n")
     stat = s.statement()
     if len(stat) == 1:
         generate_stmt(f, stat[0], ctxt)
@@ -107,23 +129,29 @@ def generate_if(f, s, ctxt):
 
 def generate_while(f, stmt, ctxt):
     writeln(f, "UNIMPLEMENTED: WHILE")
+    assert False
 
     
 def generate_unary(f, e):
-    writeln(f, str(e.op.text))
+    f.write(str(e.op.text))
     generate_expr(f, e.expr())
     
 def generate_paren(f, e):
-    writeln(f, "(")
+    f.write("(")
     generate_expr(f, e.expr())
-    writeln(f, ")")
+    f.write(")")
 
 def generate_bin(f, e):
     lhs = e.lhs()
     generate_lhs(f, lhs)
     op = e.op
     if op != None:
-        f.write(" " + str(op.text) + " ")
+        op = str(op.text)
+        if op == '==':
+            op = '='
+        elif op == '!=':
+            op = '<>'
+        f.write(" " + op + " ")
         generate_expr(f, e.expr())
 
 def generate_expr(f, e):
@@ -185,10 +213,20 @@ def generate_expr_stmt(f, stmt, ctxt):
     if rhs == None:
         generate_lhs(f, lhs)
     else:
-        op = stmt.op
-        generate_lhs(f, lhs)
-        f.write(" " + str(op.text) + " ")
-        generate_expr(f, rhs)
+        op = str(stmt.op.text)
+        if op == '=':
+            generate_lhs(f, lhs)
+            f.write(" := ")
+            generate_expr(f, rhs)
+        elif op[1] == '=':
+            generate_lhs(f, lhs)
+            f.write(" := ")
+            generate_lhs(f, lhs)
+            f.write(op[0] + "(")
+            generate_expr(f, rhs)
+            f.write(')')
+        else:
+            assert False
     f.write(";\n")
 
 def generate_transition(f, stmt, ctxt):    
@@ -232,6 +270,8 @@ def generate_stmt(f, s, ctxt):
         generate_after(f, s.after_stmt(), ctxt)
     elif s.auto_stmt() != None:
         generate_auto(f, s.auto_stmt(), ctxt)
+    elif s.switch_stmt() != None:
+        generate_switch_stmt(f, s.switch_stmt(), ctxt)
     else:
         print("---> don't know how to handle this statement")
         assert False

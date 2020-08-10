@@ -57,7 +57,14 @@ statement: if_stmt
     | assert_stmt
     | wait_stmt
     | auto_stmt ';'
+    | switch_stmt
     ;
+
+switch_stmt: 'switch' expr '{'  case*  '}';
+
+case: 'case' expr ':' block
+|      'default' ':' block
+;
 
 wait_stmt: 'wait' time_expr ';';
 

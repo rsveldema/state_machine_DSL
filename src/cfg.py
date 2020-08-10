@@ -65,9 +65,12 @@ def cfg_if(s, prev_list):
 
         del prev_list[:]
         add(prev_list, prev_if1)
-        add(prev_list, prev_if2)
-    
-    return start;
+        add(prev_list, prev_if2)    
+    return start
+
+def cfg_switch_statement(s, prev_list):
+    start = Node(s, "switch", prev_list) 
+    return start
 
 def cfg_while(s, prev_list):
     start = Node(s, "while", prev_list)
@@ -75,7 +78,7 @@ def cfg_while(s, prev_list):
     prev_if   = clone_list(prev_list)
     cfg_stmt(stats[0], prev_if)
     add(prev_list, prev_if)
-    return start;
+    return start
 
 def cfg_expr_stmt(s, prev_list):    
     start = Node(s, expr_stmt2str(s), prev_list)    
@@ -108,28 +111,30 @@ def cfg_after(s, prev_list):
 
 def cfg_stmt(s, prev_list):
     if s.if_stmt() != None:
-        cfg_if(s.if_stmt(), prev_list);
+        cfg_if(s.if_stmt(), prev_list)
     elif s.while_stmt() != None:
-        cfg_while(s.while_stmt(), prev_list);
+        cfg_while(s.while_stmt(), prev_list)
     elif s.expr_stmt() != None:
-        cfg_expr_stmt(s.expr_stmt(), prev_list);
+        cfg_expr_stmt(s.expr_stmt(), prev_list)
     elif s.auto_stmt() != None:
-        cfg_auto_stmt(s.auto_stmt(), prev_list);
+        cfg_auto_stmt(s.auto_stmt(), prev_list)
     elif s.transitionStatement() != None:
-        cfg_transition(s.transitionStatement(), prev_list);
+        cfg_transition(s.transitionStatement(), prev_list)
     elif s.block() != None:
-        cfg_block(s.block(), prev_list);
+        cfg_block(s.block(), prev_list)
     elif s.emit_stmt() != None:
-        cfg_emit(s.emit_stmt(), prev_list);
+        cfg_emit(s.emit_stmt(), prev_list)
     elif s.assert_stmt() != None:
-        cfg_assert(s.assert_stmt(), prev_list);
+        cfg_assert(s.assert_stmt(), prev_list)
     elif s.wait_stmt() != None:
-        cfg_wait(s.wait_stmt(), prev_list);
+        cfg_wait(s.wait_stmt(), prev_list)
     elif s.after_stmt() != None:
-        cfg_after(s.after_stmt(), prev_list);
+        cfg_after(s.after_stmt(), prev_list)
+    elif s.switch_stmt() != None:
+        cfg_switch_statement(s.switch_stmt(), prev_list)
     else:
         print("---> don't know how to handle this statement");
-        assert False;
+        assert False
 
     
 def cfg_block(s, prev_list):
