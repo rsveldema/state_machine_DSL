@@ -70,6 +70,19 @@ def cfg_if(s, prev_list):
 
 def cfg_switch_statement(s, prev_list):
     start = Node(s, "switch", prev_list) 
+
+    newlist = []
+
+    for n in s.case():
+        blk = n.block()
+        prev_if1   = clone_list(prev_list)
+        cfg_block(blk, prev_if1)
+        newlist.append(prev_if1)
+
+    del prev_list[:]
+    for n in newlist:
+        add(prev_list, n)
+    
     return start
 
 def cfg_while(s, prev_list):
