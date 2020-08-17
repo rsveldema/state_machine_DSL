@@ -18,3 +18,4 @@ model_check_power_manager
 *#
 .ropeproject
 tmp/*.st
+st_example/tmp/*.st
